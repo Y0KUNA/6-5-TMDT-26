@@ -80,19 +80,85 @@ function renderProductCard(product) {
 
 // Load sidebar categories
 function loadSidebarCategories() {
-  const container = document.getElementById('categoriesList');
+  // Render filters in the sidebar (price range, location, rating)
+  const container = document.getElementById('filtersList');
   if (!container) return;
 
-  const categories = mockData.categories;
-  let html = '';
+  const html = `
+    <div class="filter-group">
+      <div class="filter-label">Khoảng Giá</div>
+      <div style="display:flex; gap:8px;">
+        <input id="priceMin" type="text" class="filter-input" placeholder="Từ" />
+        <input id="priceMax" type="text" class="filter-input" placeholder="Đến" />
+      </div>
+    </div>
 
-  categories.forEach(cat => {
-    html += '<div style="padding: 12px 0; border-bottom: 0.667px solid #F1F1F1;">';
-    html += '<a href="#" style="color: #333; text-decoration: none; font-size: 14px;">' + cat.name + '</a>';
-    html += '</div>';
-  });
+    <div class="filter-group">
+      <div class="filter-label">Nơi Bán</div>
+      <select id="placeSelect" class="filter-input">
+        <option value="">Tất cả</option>
+        <option value="Hà Nội">Hà Nội</option>
+        <option value="TPHCM">TPHCM</option>
+        <option value="Đà Lạt">Đà Lạt</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <div class="filter-label">Đánh Giá</div>
+      <select id="ratingSelect" class="filter-input">
+        <option value="">Tất cả</option>
+        <option value="5">5⭐</option>
+        <option value="4+">&gt;4⭐</option>
+        <option value="3+">&gt;3⭐</option>
+        <option value="2+">&gt;2⭐</option>
+        <option value="1+">&gt;1⭐</option>
+      </select>
+    </div>
+
+    <div style="margin-top:12px; display:flex; gap:8px;">
+      <button id="applyFiltersBtn" class="btn btn-outline-success" style="flex:1;">Áp dụng</button>
+      <button id="clearFiltersBtn" class="btn btn-secondary" style="flex:1;">Xóa Tất Cả</button>
+    </div>
+  `;
 
   container.innerHTML = html;
+
+  // wire up events
+  const applyBtn = document.getElementById('applyFiltersBtn');
+  const clearBtn = document.getElementById('clearFiltersBtn');
+  const pminEl = document.getElementById('priceMin');
+  const pmaxEl = document.getElementById('priceMax');
+
+  // enforce textbox that only allows digits and optional single dot; disallow minus sign
+  [pminEl, pmaxEl].forEach(el => {
+    el.addEventListener('input', function () {
+      if (!this) return;
+      // remove any non-digit and non-dot characters
+      let v = this.value.replace(/[^0-9.]/g, '');
+      // allow only one dot
+      const parts = v.split('.');
+      if (parts.length > 2) v = parts.shift() + '.' + parts.join('');
+      this.value = v;
+    });
+    el.addEventListener('blur', function () {
+      if (!this) return;
+      if (this.value !== '') {
+        const n = parseFloat(this.value);
+        if (isNaN(n) || n < 0) this.value = '';
+        else this.value = String(n);
+      }
+    });
+  });
+
+  applyBtn.addEventListener('click', loadProducts);
+  clearBtn.addEventListener('click', function () {
+    pminEl.value = '';
+    pmaxEl.value = '';
+    document.getElementById('placeSelect').value = '';
+    document.getElementById('ratingSelect').value = '';
+    document.getElementById('sortSelect').value = 'default';
+    loadProducts();
+  });
 }
 
 // Load categories grid
@@ -115,13 +181,74 @@ function loadCategoriesGrid() {
   container.innerHTML = html;
 }
 
-// Load flash sale products
-function loadFlashSaleProducts() {
-  const container = document.getElementById('flashSaleProducts');
+// Load (and filter/sort) featured products
+function loadProducts() {
+  const container = document.getElementById('featuredProducts');
   if (!container) return;
 
-  const flashSaleProducts = dataManager.getFlashSaleProducts();
-  container.innerHTML = flashSaleProducts.map(renderProductCard).join('');
+  // Fetch products (fallback to featured)
+  let products = [];
+  try {
+    products = (typeof dataManager !== 'undefined' && dataManager.getFeaturedProducts) ? dataManager.getFeaturedProducts() : [];
+  } catch (e) {
+    products = [];
+  }
+
+  // read filters
+  const min = parseFloat(document.getElementById('priceMin')?.value || '') || null;
+  const max = parseFloat(document.getElementById('priceMax')?.value || '') || null;
+  const place = document.getElementById('placeSelect')?.value || '';
+
+  // rating filter: support exact 5 or greater-than options like '4+' meaning rating > 4
+  const ratingVal = document.getElementById('ratingSelect')?.value || '';
+  let ratingMin = null;
+  let ratingStrict = false;
+  if (ratingVal) {
+    if (ratingVal.endsWith('+')) {
+      ratingMin = parseFloat(ratingVal.slice(0, -1));
+      ratingStrict = true; // means strictly greater than ratingMin
+    } else {
+      ratingMin = parseFloat(ratingVal);
+      ratingStrict = false; // means >= ratingMin
+    }
+  }
+
+  // filter
+  const filtered = products.filter(p => {
+    const price = (p.units && p.units[0] && p.units[0].price) ? Number(p.units[0].price) : 0;
+    if (min !== null && price < min) return false;
+    if (max !== null && price > max) return false;
+
+    if (place) {
+      // try a few possible location fields
+      const loc = p.city || p.location || p.sellerCity || '';
+      if (loc && typeof loc === 'string') {
+        if (loc.toLowerCase().indexOf(place.toLowerCase()) === -1) return false;
+      } else {
+        // if product doesn't have location info, don't filter it out
+      }
+    }
+
+    if (ratingMin !== null) {
+      const rating = Number(p.rating || 0);
+      if (ratingStrict) {
+        if (!(rating > ratingMin)) return false;
+      } else {
+        if (rating < ratingMin) return false;
+      }
+    }
+
+    return true;
+  });
+
+  // sort
+  const sort = document.getElementById('sortSelect')?.value || 'default';
+  if (sort === 'price-asc') filtered.sort((a, b) => ((a.units && a.units[0]?.price) || 0) - ((b.units && b.units[0]?.price) || 0));
+  else if (sort === 'price-desc') filtered.sort((a, b) => ((b.units && b.units[0]?.price) || 0) - ((a.units && a.units[0]?.price) || 0));
+  else if (sort === 'rating') filtered.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+  else if (sort === 'sold') filtered.sort((a, b) => (b.sold || 0) - (a.sold || 0));
+
+  container.innerHTML = filtered.map(renderProductCard).join('');
 }
 
 // Load featured products
@@ -140,11 +267,12 @@ function viewProduct(productId) {
 
 // Initialize homepage
 document.addEventListener('DOMContentLoaded', function () {
-  startFlashSaleTimer();
+  // initialize filters and product list
   loadSidebarCategories();
-  loadCategoriesGrid();
-  loadFlashSaleProducts();
-  loadFeaturedProducts();
+  // ensure sort select exists before wiring
+  const sortEl = document.getElementById('sortSelect');
+  if (sortEl) sortEl.addEventListener('change', loadProducts);
+  loadProducts();
 
   // Update auth section if user is logged in
   const currentUser = dataManager.getCurrentUser();

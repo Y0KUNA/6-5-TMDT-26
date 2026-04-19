@@ -117,55 +117,33 @@
   <!-- Main Content -->
   <div class="container mt-32">
     <div style="display: flex; gap: 16px;">
-      <!-- Sidebar -->
+      <!-- Sidebar: Filters -->
       <div class="sidebar">
-        <div class="sidebar-header">DANH MỤC</div>
-        <div class="sidebar-content" id="categoriesList">
-          <!-- Categories will be loaded here -->
+        <div class="sidebar-header">BỘ LỌC</div>
+        <div class="sidebar-content" id="filtersList">
+          <!-- Filters will be rendered here -->
         </div>
       </div>
 
       <!-- Main Content Area -->
       <div style="flex: 1;">
-        <!-- Banner -->
-        <div class="banner">
-          <img src="https://via.placeholder.com/952x300/22C55E/FFFFFF?text=Banner+Slider" alt="Banner">
-          <div class="banner-controls">
-            <button class="banner-btn">‹</button>
-            <button class="banner-btn">›</button>
-          </div>
-        </div>
-
-        <!-- Flash Sale -->
-        <div class="flash-sale">
-          <div class="flash-sale-header">
-            <div style="display: flex; align-items: center; gap: 24px;">
-              <div class="flash-sale-title">⚡ FLASH SALE</div>
-              <div class="flash-sale-timer">
-                <span class="timer-label">KẾT THÚC TRONG</span>
-                <span class="timer-value" id="flashTimer">01:59:26</span>
-              </div>
-            </div>
-            <button class="view-all-btn">Xem tất cả</button>
-          </div>
-          <div class="p-24">
-            <div class="grid grid-4 gap-16" id="flashSaleProducts">
-              <!-- Flash sale products will be loaded here -->
-            </div>
-          </div>
-        </div>
-
-        <!-- Categories Section -->
-        <div class="mt-32" style="background: #FFF; border-radius: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); padding: 24px;">
-          <h2 style="color: #333; font-size: 18px; font-weight: 600; margin-bottom: 24px;">DANH MỤC</h2>
-          <div class="grid grid-4 gap-16" id="categoriesGrid">
-            <!-- Categories will be loaded here -->
-          </div>
-        </div>
+        <!-- Removed Banner, Flash Sale, and Categories per requirements -->
 
         <!-- Featured Products -->
         <div class="mt-32" style="background: #FFF; border-radius: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); padding: 24px;">
-          <h2 style="color: #333; font-size: 18px; font-weight: 600; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 0.667px solid #F1F1F1;">GỢI Ý HÔM NAY</h2>
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+            <h2 style="color: #333; font-size: 18px; font-weight: 600; margin:0;">GỢI Ý HÔM NAY</h2>
+            <div class="sort-controls">
+              <label for="sortSelect" style="color:#666; font-size:13px; margin-right:8px;">Sắp xếp theo:</label>
+              <select id="sortSelect" style="height:34px; border:1px solid #E5E7EB; border-radius:4px; padding:4px 8px;">
+                <option value="default">Mặc định</option>
+                <option value="price-asc">Giá: Tăng dần</option>
+                <option value="price-desc">Giá: Giảm dần</option>
+                <option value="rating">Đánh giá</option>
+                <option value="sold">Số lượt bán</option>
+              </select>
+            </div>
+          </div>
           <div class="grid grid-4 gap-16" id="featuredProducts">
             <!-- Featured products will be loaded here -->
           </div>
