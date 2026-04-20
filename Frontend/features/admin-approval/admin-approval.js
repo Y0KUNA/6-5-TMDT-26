@@ -1,39 +1,7 @@
-// Admin approval logic (moved to features/admin-approval)
+
 
 let currentVendorId = null;
 let currentPromotionId = null;
-
-// Sample vendor data for demo
-const sampleVendors = [
-  {
-    id: 1,
-    fullName: 'Nguyễn Văn A',
-    businessName: 'Nông Trại Xanh Organic',
-    businessAddress: '123 Đường Lê Lợi, Quận 1, TP.HCM',
-    businessPhone: '0901234567',
-    status: 'pending',
-    licenseImage: 'https://via.placeholder.com/522x200/22C55E/FFFFFF?text=Giay+Phep+Kinh+Doanh'
-  },
-  {
-    id: 2,
-    fullName: 'Trần Thị B',
-    businessName: 'Cửa Hàng Rau Sạch Miền Tây',
-    businessAddress: '456 Đường Nguyễn Văn Cừ, Quận 5, TP.HCM',
-    businessPhone: '0912345678',
-    status: 'pending',
-    licenseImage: 'https://via.placeholder.com/522x200/22C55E/FFFFFF?text=Giay+Phep+Kinh+Doanh'
-  },
-  {
-    id: 3,
-    fullName: 'Lê Văn C',
-    businessName: 'Trang Trại Hữu Cơ Đà Lạt',
-    businessAddress: '789 Đường Trần Hưng Đạo, Đà Lạt, Lâm Đồng',
-    businessPhone: '0923456789',
-    status: 'pending',
-    licenseImage: 'https://via.placeholder.com/522x200/22C55E/FFFFFF?text=Giay+Phep+Kinh+Doanh'
-  }
-];
-
 // Load vendors from localStorage or use sample data
 async function loadVendors() {
   // Try to fetch pending vendors from server API
@@ -61,14 +29,6 @@ async function loadVendors() {
   } catch (err) {
     console.warn('Failed to fetch vendors from API, falling back to localStorage/sample', err);
   }
-
-  // Fallback to localStorage/sample data
-  let vendors = JSON.parse(localStorage.getItem('vendors') || '[]');
-  if (vendors.length === 0) {
-    vendors = sampleVendors;
-    localStorage.setItem('vendors', JSON.stringify(vendors));
-  }
-  return vendors.filter(v => v.status === 'pending');
 }
 
 // Render vendors
@@ -101,10 +61,10 @@ async function renderVendors() {
           </div>
           <div style="display: flex; gap: 12px; margin-top: 16px;">
             <button onclick="approveVendor(${vendor.id})" class="btn btn-success" style="padding: 12px 24px;">
-              ✅ Phê Duyệt
+              Phê Duyệt
             </button>
             <button onclick="openRejectModal(${vendor.id}, '${vendor.businessName}')" class="btn btn-danger" style="padding: 12px 24px;">
-              ❌ Từ Chối
+              Từ Chối
             </button>
           </div>
         </div>
@@ -163,18 +123,28 @@ function closeRejectModal() {
 
 // Confirm reject
 function confirmReject() {
-  const reason = document.getElementById('rejectReason').value.trim();
-  
-  if (!reason) {
-    alert('Vui lòng nhập lý do từ chối!');
-    return;
+  // reason is now optional
+  const reason = document.getElementById('rejectReason').value.trim() || null;
+
+  // client-side placeholder hook to perform additional actions when rejecting (e.g., send notification)
+  function onVendorRejected(vendorId, reason) {
+    // TODO: implement real notification/email logic here
+    console.log('onVendorRejected placeholder called for', vendorId, 'reason:', reason);
   }
-  // call API to reject
+
   (async () => {
     try {
-      const resp = await fetch((window.VENDORS_API_URL_BASE || '') + `/api/vendors/${currentVendorId}/reject`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reason }) });
+      const base = window.VENDORS_API_URL_BASE || 'http://localhost:3000';
+      const token = localStorage.getItem('authToken');
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = 'Bearer ' + token;
+
+      // Use PATCH endpoint to update profile_status to REJECTED
+      const resp = await fetch(base + `/api/vendors/${currentVendorId}`, { method: 'PATCH', headers, body: JSON.stringify({ profile_status: 'REJECTED', reason }) });
       if (resp.ok) {
         alert('Đã từ chối đơn đăng ký');
+        // call client-side placeholder
+        try { onVendorRejected(currentVendorId, reason); } catch (e) { console.warn('onVendorRejected failed', e); }
         closeRejectModal();
         await renderVendors();
         return;

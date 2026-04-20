@@ -105,6 +105,19 @@ router.patch('/:enterpriseId', async (req, res) => {
     }
 
     await client.query('COMMIT');
+
+    // server-side placeholder hook for REJECTED status (e.g., send email/notification)
+    async function vendorRejectedHook(enterpriseId, reason) {
+      // TODO: implement actual notification/email logic here
+      console.log('vendorRejectedHook placeholder called for enterprise', enterpriseId, 'reason:', reason);
+      return Promise.resolve();
+    }
+
+    if (profile_status === 'REJECTED') {
+      // fire-and-forget the hook, but catch errors
+      vendorRejectedHook(enterpriseId, reason).catch(err => console.error('vendorRejectedHook error', err));
+    }
+
     return res.json({ ok: true });
   } catch (err) {
     await client.query('ROLLBACK');
