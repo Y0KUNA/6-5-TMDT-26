@@ -107,6 +107,26 @@ Nếu trả về thời gian server là DB đã chạy và kết nối được.
 
 ---
 
+# Cài đặt môi trường dành cho người sử dụng Docker và Nix-OS (hoặc nix-packages manager)
+
+- [Docker](https://www.docker.com/): PostgreSQL chạy trên docker
+- [Nix](https://nixos.org/): Quản lí node bằng nix
+
+## Khởi tạo môi trường
+
+Chạy lệnh sau để khởi chạy PostgreSQL trong Docker và Node từ Nix:
+
+```bash
+cd Infrastructure/docker && docker-compose up postgre -d
+```
+
+Mỗi khi vào code, chạy lệnh sau để vào môi trường Nix:
+```bash
+nix develop
+```
+
+---
+
 ## Tài liệu nhóm (nếu cần bổ sung)
 
 - Link repo: *(điền URL)*
