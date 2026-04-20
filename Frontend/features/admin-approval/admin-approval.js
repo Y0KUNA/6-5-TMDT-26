@@ -38,19 +38,23 @@ const sampleVendors = [
 async function loadVendors() {
   // Try to fetch pending vendors from server API
   try {
-    const resp = await fetch(window.VENDORS_API_URL || '/api/vendors/pending');
+    const apiUrl = window.VENDORS_API_URL || 'http://localhost:3000/api/vendors/pending';
+    const resp = await fetch(apiUrl);
     if (resp.ok) {
       const body = await resp.json();
       if (Array.isArray(body.vendors)) {
+        // map the backend vendor shape to the frontend expected shape
+        const base = window.VENDORS_API_URL_BASE || 'http://localhost:3000';
         return body.vendors.map(v => ({
-          id: v.enterprise_id || v.enterpriseid || v.id,
-          profileId: v.profile_id,
-          fullName: v.full_name,
-          businessName: v.business_name,
-          businessAddress: v.address,
-          businessPhone: v.phone,
-          status: v.status,
-          licenseImage: v.license_file
+          id: v.user_id || v.id,
+          profileId: v.profile_id || null,
+          fullName: v.full_name || v.fullName || '',
+          businessName: v.business_name || v.businessName || '',
+          businessAddress: v.business_address || v.address || '',
+          businessPhone: v.phone || v.business_phone || '',
+          status: v.profile_status || v.status || '',
+          // ensure license file is an absolute URL when backend returns a relative path
+          licenseImage: (v.license_file && v.license_file.startsWith('/')) ? (base + v.license_file) : (v.license_file || '')
         })).filter(x => x.status === 'PENDING' || x.status === 'pending');
       }
     }
@@ -117,12 +121,24 @@ async function renderVendors() {
 async function approveVendor(vendorId) {
   if (!confirm('Bạn có chắc chắn muốn phê duyệt đơn đăng ký này?')) return;
   try {
-    const resp = await fetch((window.VENDORS_API_URL_BASE || '') + `/api/vendors/${vendorId}/approve`, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+    const base = window.VENDORS_API_URL_BASE || 'http://localhost:3000';
+    const token = localStorage.getItem('authToken');
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+
+    // Send PATCH to update vendor profile_status to APPROVED
+    const resp = await fetch(base + `/api/vendors/${vendorId}`, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify({ profile_status: 'APPROVED' })
+    });
+
     if (resp.ok) {
       alert('Đã phê duyệt đơn đăng ký');
       await renderVendors();
       return;
     }
+
     const err = await resp.json().catch(() => ({}));
     alert('Không thể phê duyệt: ' + (err.error || resp.statusText));
   } catch (e) {

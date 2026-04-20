@@ -78,4 +78,41 @@ router.post('/:enterpriseId/reject', async (req, res) => {
   }
 });
 
+// PATCH /api/vendors/:enterpriseId
+// Accepts { profile_status: 'APPROVED'|'REJECTED', reason?: string }
+// This route updates business_profiles.status, enterprises.is_approved and users.is_active atomically.
+router.patch('/:enterpriseId', async (req, res) => {
+  const enterpriseId = parseInt(req.params.enterpriseId, 10);
+  const { profile_status, reason } = req.body || {};
+  if (!enterpriseId) return res.status(400).json({ error: 'Invalid enterprise id' });
+  if (!profile_status) return res.status(400).json({ error: 'Missing profile_status in body' });
+
+  const client = await db.pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    if (profile_status === 'APPROVED') {
+      await client.query("UPDATE business_profiles SET status = 'APPROVED', reviewed_at = CURRENT_TIMESTAMP WHERE enterprise_id = $1", [enterpriseId]);
+      await client.query('UPDATE enterprises SET is_approved = true WHERE enterprise_id = $1', [enterpriseId]);
+      await client.query('UPDATE users SET is_active = true WHERE user_id = (SELECT user_id FROM enterprises WHERE enterprise_id = $1)', [enterpriseId]);
+    } else if (profile_status === 'REJECTED') {
+      await client.query("UPDATE business_profiles SET status = 'REJECTED', rejected_reason = $1, reviewed_at = CURRENT_TIMESTAMP WHERE enterprise_id = $2", [reason || null, enterpriseId]);
+      await client.query('UPDATE enterprises SET is_approved = false WHERE enterprise_id = $1', [enterpriseId]);
+      await client.query('UPDATE users SET is_active = false WHERE user_id = (SELECT user_id FROM enterprises WHERE enterprise_id = $1)', [enterpriseId]);
+    } else {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: 'Invalid profile_status. Allowed: APPROVED, REJECTED' });
+    }
+
+    await client.query('COMMIT');
+    return res.json({ ok: true });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('PATCH /api/vendors/:id error', err);
+    return res.status(500).json({ error: 'Internal server error' });
+  } finally {
+    client.release();
+  }
+});
+
 module.exports = router;

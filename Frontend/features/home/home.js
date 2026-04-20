@@ -314,19 +314,20 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Update auth section if user is logged in
   const currentUser = dataManager.getCurrentUser();
+  console.log(currentUser.role);
   console.log(currentUser);
+
   if (currentUser) {
+    
     const topNav = document.querySelector('.top-header .top-nav:last-child');
-    const loginLink = document.getElementById('loginLink');
+    //const loginLink = document.getElementById('loginLink');
     const registerLink = document.getElementById('registerLink');
 
-    if (!topNav || !loginLink) return;
-
-    // Ẩn login / register
+    if (!topNav ) return;
+    console.log('User is logged in, updating header');
     if (registerLink) registerLink.style.display = 'none';
-    loginLink.style.display = 'none';
+    //loginLink.style.display = 'none';
 
-    // Tạo menu user
     const userMenu = document.createElement('div');
     userMenu.style.cssText = 'position: relative; display: inline-block;';
 
@@ -338,11 +339,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const dropdown = document.createElement('div');
     dropdown.style.cssText = 'display: none; position: absolute; top: 100%; right: 0; background: white; border: 1px solid #E5E7EB; border-radius: 4px; min-width: 200px; z-index: 10000;';
 
-    const profileLink = document.createElement('a');
-    profileLink.href = '../profile/profile.html';
-    profileLink.textContent = 'Hồ sơ';
-    profileLink.style.cssText = 'display: block; padding: 12px; color: #333; text-decoration: none;';
-
     const logoutLink = document.createElement('a');
     logoutLink.href = '#';
     logoutLink.textContent = 'Đăng xuất';
@@ -352,33 +348,40 @@ document.addEventListener('DOMContentLoaded', function () {
       handleLogout();
     };
 
-    // If admin, show only system admin link (no profile / order links)
-    try {
-      if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'ADMIN')) {
-        const adminMgmtLink = document.createElement('a');
-        adminMgmtLink.href = '../product-management/product-management.html';
-        adminMgmtLink.textContent = 'Quản trị hệ thống';
-        adminMgmtLink.style.cssText = 'display: block; padding: 12px; color: #333; text-decoration: none;';
+    const role = (currentUser.role || '').toLowerCase().trim();
+    console.log('User role for menu rendering:', role);
+    if (role == 'admin') {
+      // ADMIN
+      console.log('Rendering admin menu');
+  const adminLink = document.createElement('a');
+  // relative path from features/home/index.html -> features/admin-approval/admin-approval.html
+  adminLink.href = '../admin-approval/admin-approval.html';
+      adminLink.textContent = 'Quản trị hệ thống';
+      adminLink.style.cssText = 'display: block; padding: 12px; color: #333; text-decoration: none;';
 
-        dropdown.appendChild(adminMgmtLink);
-      } else {
-        // non-admin users see their profile link
-        dropdown.appendChild(profileLink);
-      }
-    } catch (e) {
-      console.warn('Could not determine user role for admin links', e);
+      dropdown.appendChild(adminLink);
+    } else {
+      // USER THƯỜNG
+      console.log('Rendering regular user menu');
+      const profileLink = document.createElement('a');
+      profileLink.href = '../profile/profile.html';
+      profileLink.textContent = 'Hồ sơ';
+      profileLink.style.cssText = 'display: block; padding: 12px; color: #333; text-decoration: none;';
+
+      const orderLink = document.createElement('a');
+      orderLink.href = '../orders/orders.html';
+      orderLink.textContent = 'Quản lý đơn hàng';
+      orderLink.style.cssText = 'display: block; padding: 12px; color: #333; text-decoration: none;';
+
       dropdown.appendChild(profileLink);
+      dropdown.appendChild(orderLink);
     }
 
     dropdown.appendChild(logoutLink);
-
     userMenu.appendChild(userButton);
     userMenu.appendChild(dropdown);
-
-    // Gắn vào đúng chỗ
     topNav.appendChild(userMenu);
 
-    // Toggle
     userButton.onclick = function (e) {
       e.preventDefault();
       e.stopPropagation();
