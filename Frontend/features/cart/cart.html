@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Giỏ Hàng - Nông Sản Sạch</title>
+  <link rel="stylesheet" href="../../css/style.css">
+</head>
+<body>
+  <div style="min-height: 100vh; background: #FFF;">
+    <div class="container" style="padding: 24px 45px;">
+      <h1 style="color: #1F2937; font-size: 24px; font-weight: 700; margin-bottom: 32px;">Giỏ Hàng</h1>
+      
+      <div id="cartItems">
+        <!-- Cart items will be rendered here -->
+      </div>
+
+      <div id="emptyCart" style="display: none; text-align: center; padding: 48px;">
+        <p style="color: #666; font-size: 18px; margin-bottom: 24px;">Giỏ hàng của bạn đang trống</p>
+        <a href="../home/index.html" class="btn btn-primary">Tiếp tục mua sắm</a>
+      </div>
+
+      <div id="cartSummary" style="display: none;">
+        <div style="border-radius: 8px; border: 1px solid #E5E7EB; background: #FFF; padding: 24px; margin-top: 32px;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 16px;">
+            <span style="color: #1F2937; font-size: 16px; font-weight: 600;">Tổng tiền:</span>
+            <span id="totalAmount" style="color: #1F2937; font-size: 16px; font-weight: 600;"></span>
+          </div>
+          <button onclick="checkout()" class="btn btn-success" style="width: 100%;">Thanh Toán</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../shared/data.js"></script>
+  <script src="./cart.js"></script>
+</body>
+</html>

@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nông Sản Sạch - Organic Marketplace</title>
+  <link rel="stylesheet" href="../../css/style.css">
+</head>
+<body>
+  <!-- Top Header -->
+  <div class="top-header">
+    <div class="top-nav">
+    </div>
+    <div class="top-nav">
+      <script>
+        (function() {
+          try {
+            var raw = localStorage.getItem('currentUser');
+            var user = raw ? JSON.parse(raw) : null;
+            var nav = document.currentScript.parentElement;
+
+            if (user) {
+              // Render username + dropdown in the top nav
+              nav.innerHTML = '';
+              var span = document.createElement('span');
+              span.id = 'topUserMenu';
+              span.style.cssText = 'position: relative; cursor: pointer;';
+              span.innerHTML = (user.fullName || user.email || 'Người dùng') + ' <span style="margin-left:8px;color:#666;">▼</span>';
+              nav.appendChild(span);
+
+              var dropdown = document.createElement('div');
+              dropdown.id = 'topUserDropdown';
+              dropdown.style.cssText = 'display: none; position: absolute; top: 100%; right: 0; background: white; border: 1px solid #E5E7EB; border-radius: 4px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); min-width: 180px; z-index: 10000; margin-top: 4px;';
+
+              var profile = document.createElement('a');
+              profile.href = '../profile/profile.html';
+              profile.textContent = 'Hồ sơ';
+              profile.style.cssText = 'display: block; padding: 12px 16px; color: #333; text-decoration: none; border-bottom: 1px solid #E5E7EB;';
+
+              var orders = document.createElement('a');
+              orders.href = '../order-management/order-management.html';
+              orders.textContent = 'Quản lý đơn hàng';
+              orders.style.cssText = 'display: block; padding: 12px 16px; color: #333; text-decoration: none; border-bottom: 1px solid #E5E7EB;';
+
+              var logout = document.createElement('a');
+              logout.href = '#';
+              logout.id = 'topLogout';
+              logout.textContent = 'Đăng xuất';
+              logout.style.cssText = 'display: block; padding: 12px 16px; color: #EF4444; text-decoration: none;';
+
+              dropdown.appendChild(profile);
+              dropdown.appendChild(orders);
+              dropdown.appendChild(logout);
+              span.appendChild(dropdown);
+
+              span.addEventListener('click', function(e) {
+                e.stopPropagation();
+                dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+              });
+
+              logout.addEventListener('click', function(e) {
+                e.preventDefault();
+                localStorage.removeItem('authToken');
+                localStorage.removeItem('currentUser');
+                // Optionally notify server about logout here
+                window.location.reload();
+              });
+
+              document.addEventListener('click', function(e) {
+                if (!span.contains(e.target)) dropdown.style.display = 'none';
+              });
+            } else {
+              nav.innerHTML = '<a href="../register/register.html" id="registerLink">Đăng Ký</a><a href="../login/login.html" id="loginLink">Đăng Nhập</a>';
+            }
+          } catch (err) {
+            console.error('auth top-nav render error', err);
+          }
+        })();
+      </script>
+    </div>
+  </div>
+
+  <!-- Main Header -->
+  <div class="main-header">
+    <a href="./index.html" class="logo">
+      <div class="logo-icon">🌱</div>
+      <div class="logo-text">
+        <h1>Nông Sản Sạch</h1>
+        <p>Organic Marketplace</p>
+      </div>
+    </a>
+
+    <div class="search-container">
+      <div class="search-box">
+        <input type="text" placeholder="Tìm kiếm nông sản sạch..." id="searchInput">
+        <button class="search-btn">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M17.5 17.5L12.5 12.5M14.1667 8.33333C14.1667 11.555 11.555 14.1667 8.33333 14.1667C5.11167 14.1667 2.5 11.555 2.5 8.33333C2.5 5.11167 5.11167 2.5 8.33333 2.5C11.555 2.5 14.1667 5.11167 14.1667 8.33333Z" stroke="white" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+      <div class="search-suggestions">
+        <a href="#">rau sạch</a>
+        <a href="#">trái cây organic</a>
+        <a href="#">thịt sạch</a>
+        <a href="#">gạo ST25</a>
+      </div>
+    </div>
+
+    <a href="../cart/cart.html">
+      <svg class="cart-icon" viewBox="0 0 32 32" fill="none">
+        <path d="M4 4H6.66667L7.2 6.66667M7.2 6.66667H28L22.6667 17.3333M7.2 6.66667L9.33333 17.3333M22.6667 17.3333H9.33333M22.6667 17.3333V25.3333C22.6667 26.7478 21.5145 28 20 28H12C10.4855 28 9.33333 26.7478 9.33333 25.3333V17.3333" stroke="black" stroke-width="2"/>
+      </svg>
+    </a>
+  </div>
+
+  <!-- Main Content -->
+  <div class="container mt-32">
+    <div style="display: flex; gap: 16px;">
+      <!-- Sidebar: Filters -->
+      <div class="sidebar">
+        <div class="sidebar-header">BỘ LỌC</div>
+        <div class="sidebar-content" id="filtersList">
+          <!-- Filters will be rendered here -->
+        </div>
+      </div>
+
+      <!-- Main Content Area -->
+      <div style="flex: 1;">
+        <!-- Removed Banner, Flash Sale, and Categories per requirements -->
+
+        <!-- Featured Products -->
+        <div class="mt-32" style="background: #FFF; border-radius: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); padding: 24px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+            <h2 style="color: #333; font-size: 18px; font-weight: 600; margin:0;">GỢI Ý HÔM NAY</h2>
+            <div class="sort-controls">
+              <label for="sortSelect" style="color:#666; font-size:13px; margin-right:8px;">Sắp xếp theo:</label>
+              <select id="sortSelect" style="height:34px; border:1px solid #E5E7EB; border-radius:4px; padding:4px 8px;">
+                <option value="default">Mặc định</option>
+                <option value="price-asc">Giá: Tăng dần</option>
+                <option value="price-desc">Giá: Giảm dần</option>
+                <option value="rating">Đánh giá</option>
+                <option value="sold">Số lượt bán</option>
+              </select>
+            </div>
+          </div>
+          <div class="grid grid-4 gap-16" id="featuredProducts">
+            <!-- Featured products will be loaded here -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../shared/data.js"></script>
+  <script src="./home.js"></script>
+</body>
+</html>

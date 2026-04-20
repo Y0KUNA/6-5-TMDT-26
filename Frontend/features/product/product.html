@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chi Tiết Sản Phẩm - Nông Sản Sạch</title>
+  <link rel="stylesheet" href="../../css/style.css">
+</head>
+<body style="background: #FFF;">
+  <!-- Top Header -->
+  <div class="top-header">
+    <div class="top-nav">
+      <a href="#">Kênh Người Bán</a>
+      <a href="#">Trở thành Người bán Nông Sản Sạch</a>
+      <a href="#">Tải ứng dụng</a>
+    </div>
+    <div class="top-nav">
+      <a href="#">🔔 Thông báo</a>
+      <a href="#">❓ Hỗ trợ</a>
+      <a href="#">🌐 Tiếng Việt</a>
+      <a href="../register/register.html">Đăng Ký</a>
+      <a href="../login/login.html" id="loginLink">Đăng Nhập</a>
+    </div>
+  </div>
+
+  <!-- Main Header -->
+  <div class="main-header">
+    <a href="../home/index.html" class="logo">
+      <div class="logo-icon">🌱</div>
+      <div class="logo-text">
+        <h1>Nông Sản Sạch</h1>
+        <p>Organic Marketplace</p>
+      </div>
+    </a>
+
+    <div class="search-container">
+      <div class="search-box">
+        <input type="text" placeholder="Tìm kiếm nông sản sạch...">
+        <button class="search-btn">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M17.5 17.5L12.5 12.5M14.1667 8.33333C14.1667 11.555 11.555 14.1667 8.33333 14.1667C5.11167 14.1667 2.5 11.555 2.5 8.33333C2.5 5.11167 5.11167 2.5 8.33333 2.5C11.555 2.5 14.1667 5.11167 14.1667 8.33333Z" stroke="white" stroke-width="2"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <a href="../cart/cart.html">
+      <svg class="cart-icon" viewBox="0 0 32 32" fill="none">
+        <path d="M4 4H6.66667L7.2 6.66667M7.2 6.66667H28L22.6667 17.3333M7.2 6.66667L9.33333 17.3333M22.6667 17.3333H9.33333M22.6667 17.3333V25.3333C22.6667 26.7478 21.5145 28 20 28H12C10.4855 28 9.33333 26.7478 9.33333 25.3333V17.3333" stroke="black" stroke-width="2"/>
+      </svg>
+    </a>
+  </div>
+
+  <!-- Product Detail -->
+  <div class="container mt-32">
+    <div style="background: #FFF; padding: 24px;">
+      <h2 style="color: #000; font-size: 24px; font-weight: 700; padding-bottom: 16px; border-bottom: 1px solid #F1F1F1; margin-bottom: 24px;">
+        Thông Tin Sản Phẩm
+      </h2>
+
+      <div id="productImages" style="border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow: hidden; margin-bottom: 24px;">
+        <!-- Product image will be loaded here -->
+      </div>
+
+      <div style="padding: 0 24px;">
+        <h1 id="productName" style="color: #000; font-size: 20px; font-weight: 600; margin-bottom: 8px;"></h1>
+        
+        <div id="productPrice" style="color: #16A34A; font-size: 18px; font-weight: 700; margin-bottom: 16px;"></div>
+        
+        <div id="productDescription" style="color: #000; font-size: 16px; line-height: 24px; margin-bottom: 16px;"></div>
+        
+        <div style="margin-bottom: 16px;">
+          <span style="color: #000; font-size: 16px;">Giấy chứng nhận an toàn thực phẩm: </span>
+          <a href="#" id="certificateLink" style="color: #16A34A; text-decoration: underline;">Xem</a>
+        </div>
+        
+        <div style="margin-bottom: 16px;">
+          <div style="color: #000; font-size: 16px; font-weight: 600; margin-bottom: 8px;">Đánh giá:</div>
+          <div id="productRating" style="display: flex; align-items: center; gap: 4px;"></div>
+        </div>
+
+        <button onclick="openAddToCartModal()" class="btn btn-success" style="width: 100%; max-width: 517px;">
+          Thêm vào giỏ hàng
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add to Cart Modal -->
+  <div id="addToCartModal" class="modal">
+    <div class="modal-content" style="padding: 32px; max-width: 500px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+        <h3 style="color: #000; font-size: 20px; font-weight: 600;">Chọn đơn vị và số lượng</h3>
+        <button onclick="closeAddToCartModal()" style="background: none; border: none; color: #666; font-size: 20px; cursor: pointer;">×</button>
+      </div>
+
+      <div style="margin-bottom: 24px;">
+        <div style="color: #000; font-size: 16px; font-weight: 600; margin-bottom: 12px;">Đơn vị mua:</div>
+        <div id="unitOptions">
+          <!-- Units will be loaded here -->
+        </div>
+      </div>
+
+      <div style="margin-bottom: 24px;">
+        <div style="color: #000; font-size: 16px; font-weight: 600; margin-bottom: 12px;">Số lượng:</div>
+        <div style="display: flex; gap: 12px; align-items: center;">
+          <button onclick="decreaseQuantity()" style="width: 40px; height: 40px; border-radius: 8px; border: 1px solid #E5E7EB; background: #F9FAFB; cursor: pointer; font-size: 18px;">−</button>
+          <input type="number" id="quantity" value="1" min="1" style="flex: 1; height: 41px; border: 1px solid #E5E7EB; border-radius: 8px; text-align: center; font-size: 16px;">
+          <button onclick="increaseQuantity()" style="width: 40px; height: 40px; border-radius: 8px; border: 1px solid #E5E7EB; background: #F9FAFB; cursor: pointer; font-size: 18px;">+</button>
+        </div>
+      </div>
+
+      <div style="border: 1px solid #E5E7EB; border-radius: 8px; background: #F9FAFB; padding: 16px; margin-bottom: 24px;">
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: #000; font-size: 16px; font-weight: 600;">Tổng tiền:</span>
+          <span id="modalTotal" style="color: #16A34A; font-size: 18px; font-weight: 700;"></span>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 12px;">
+        <button onclick="closeAddToCartModal()" class="btn btn-secondary" style="flex: 1;">Hủy</button>
+        <button onclick="confirmAddToCart()" class="btn btn-success" style="flex: 1;">Thêm vào giỏ</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../shared/data.js"></script>
+  <script src="./product.js"></script>
+</body>
+</html>

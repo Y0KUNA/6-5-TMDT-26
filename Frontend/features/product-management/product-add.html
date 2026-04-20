@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Thêm Sản Phẩm - Nông Sản Sạch</title>
+  <link rel="stylesheet" href="../../css/style.css">
+</head>
+<body>
+  <div class="container mt-32" style="padding-bottom: 48px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px;">
+      <h1 style="color: #000; font-size: 24px; font-weight: 700;">Quản Lý Sản Phẩm</h1>
+      
+      <div style="display: flex; gap: 12px;">
+        <a href="../statistics/statistics.html" class="btn btn-outline-success tab-button">Thống Kê</a>
+        <a href="product-add.html" class="btn btn-success tab-button">Thêm Sản Phẩm</a>
+        <a href="../product-management/product-management.html" class="btn btn-outline-success tab-button">Danh Sách</a>
+      </div>
+    </div>
+
+    <div style="background: #FFF; border-radius: 8px; box-shadow: 0 10px 15px 0 rgba(0,0,0,0.1); padding: 24px;">
+      <h2 style="color: #000; font-size: 20px; font-weight: 600; margin-bottom: 32px; padding-bottom: 24px; border-bottom: 0.667px solid #E5E7EB;">
+        Thêm Sản Phẩm Mới
+      </h2>
+
+      <form id="addProductForm">
+        <!-- Product Images -->
+        <div class="form-group">
+          <label style="color: #000; font-size: 16px; font-weight: 600; display: block; margin-bottom: 12px;">
+            Hình Ảnh Sản Phẩm
+          </label>
+          <div class="file-upload-area" onclick="document.getElementById('productImages').click()">
+            <div class="file-upload-icon">+</div>
+            <div class="file-upload-text">Thêm Hình Ảnh</div>
+          </div>
+          <input type="file" id="productImages" accept="image/*" multiple style="display: none;">
+          <div id="imagePreview" style="margin-top: 12px; display: flex; gap: 12px; flex-wrap: wrap;"></div>
+        </div>
+
+        <!-- Product Name -->
+        <div class="form-group">
+          <label style="color: #000; font-size: 16px; font-weight: 600; display: block; margin-bottom: 12px;">
+            Tên Sản Phẩm
+          </label>
+          <input type="text" class="form-input" name="name" placeholder="Nhập tên sản phẩm" required>
+        </div>
+
+        <!-- Product Description -->
+        <div class="form-group">
+          <label style="color: #000; font-size: 16px; font-weight: 600; display: block; margin-bottom: 12px;">
+            Mô Tả Sản Phẩm
+          </label>
+          <textarea class="form-textarea" name="description" rows="5" required></textarea>
+        </div>
+
+        <!-- Units -->
+        <div class="form-group">
+          <label style="color: #000; font-size: 16px; font-weight: 600; display: block; margin-bottom: 12px;">
+            Đơn Vị Bán
+          </label>
+          
+          <div id="unitsList">
+            <div class="unit-container">
+              <div class="grid grid-2 gap-16" style="margin-bottom: 16px;">
+                <div class="form-group">
+                  <label class="form-label">Đơn vị</label>
+                  <input type="text" class="form-input" placeholder="kg, gói, thùng..." required>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Giá bán mỗi đơn vị (VNĐ)</label>
+                  <input type="number" class="form-input" placeholder="23,000" required>
+                </div>
+              </div>
+              <button type="button" class="delete-unit-btn" onclick="removeUnit(this)" style="display: none;">
+                Xóa
+              </button>
+            </div>
+          </div>
+
+          <button type="button" onclick="addUnit()" class="add-unit-btn">Thêm Đơn Vị Bán Mới</button>
+        </div>
+
+        <!-- Food Safety Certificate -->
+        <div class="form-group">
+          <label style="color: #000; font-size: 16px; font-weight: 600; display: block; margin-bottom: 12px;">
+            Giấy Chứng Nhận An Toàn
+          </label>
+          <div class="file-upload-area" style="padding: 24px;" onclick="document.getElementById('certificate').click()">
+            <div class="file-upload-text">+ Thêm Chứng Nhận</div>
+          </div>
+          <input type="file" id="certificate" accept="image/*,.pdf" style="display: none;">
+          <div id="certificatePreview" style="margin-top: 8px; color: #16A34A; font-size: 14px;"></div>
+        </div>
+
+        <!-- Actions -->
+        <div style="display: flex; gap: 16px; margin-top: 32px;">
+          <button type="submit" class="btn btn-success" style="flex: 1;">Lưu Sản Phẩm</button>
+          <button type="button" onclick="window.location.href='../product-management/product-management.html'" class="btn btn-secondary" style="flex: 1;">Hủy</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="../shared/data.js"></script>
+  <script>
+    // Moved inline scripts with login redirect updates
+    document.addEventListener('DOMContentLoaded', function() {
+      const currentUser = dataManager.getCurrentUser();
+      
+      if (!currentUser) {
+        alert('Vui lòng đăng nhập để truy cập trang này');
+        window.location.href = '../login/login.html';
+        return;
+      }
+      
+      if (currentUser.role !== 'vendor' && currentUser.role !== 'business') {
+        alert('Bạn không có quyền truy cập trang này');
+        window.location.href = '../home/index.html';
+        return;
+      }
+    });
+
+    let unitCount = 1;
+
+    document.getElementById('productImages').addEventListener('change', function(e) {
+      const files = Array.from(e.target.files);
+      const preview = document.getElementById('imagePreview');
+      preview.innerHTML = files.map((file, index) => `
+        <div style="position: relative; width: 100px; height: 100px;">
+          <img src="${URL.createObjectURL(file)}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px; border: 1px solid #E5E7EB;">
+          <button type="button" onclick="removeImage(${index})" style="position: absolute; top: 4px; right: 4px; background: #EF4444; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer;">×</button>
+        </div>
+      `).join('');
+    });
+
+    document.getElementById('certificate').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        document.getElementById('certificatePreview').textContent = `Đã chọn: ${file.name}`;
+      }
+    });
+
+    function addUnit() {
+      unitCount++;
+      const unitsList = document.getElementById('unitsList');
+      const newUnit = document.createElement('div');
+      newUnit.className = 'unit-container';
+      newUnit.innerHTML = `
+        <div class="grid grid-2 gap-16" style="margin-bottom: 16px;">
+          <div class="form-group">
+            <label class="form-label">Đơn vị</label>
+            <input type="text" class="form-input" placeholder="kg, gói, thùng..." required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Giá bán mỗi đơn vị (VNĐ)</label>
+            <input type="number" class="form-input" placeholder="23,000" required>
+          </div>
+        </div>
+        <button type="button" class="delete-unit-btn" onclick="removeUnit(this)">Xóa</button>
+      `;
+      unitsList.appendChild(newUnit);
+    }
+
+    function removeUnit(button) {
+      button.closest('.unit-container').remove();
+      unitCount--;
+    }
+
+    document.getElementById('addProductForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const currentUser = dataManager.getCurrentUser();
+      if (!currentUser) {
+        alert('Vui lòng đăng nhập');
+        return;
+      }
+      
+      const productName = e.target.querySelector('input[name="name"]').value;
+      const productDescription = e.target.querySelector('textarea[name="description"]').value;
+      
+      if (!productName || !productDescription) {
+        alert('Vui lòng điền đầy đủ thông tin');
+        return;
+      }
+      
+      const units = [];
+      const unitInputs = document.querySelectorAll('#unitsList .unit-container');
+      unitInputs.forEach(unitContainer => {
+        const inputs = unitContainer.querySelectorAll('input');
+        const unitName = inputs[0].value;
+        const unitPrice = parseInt(inputs[1].value);
+        if (unitName && unitPrice) {
+          units.push({ name: unitName, price: unitPrice });
+        }
+      });
+      
+      if (units.length === 0) {
+        alert('Vui lòng thêm ít nhất một đơn vị bán');
+        return;
+      }
+      
+      let vendorId = null;
+      if (currentUser.role === 'vendor') {
+        const vendor = dataManager.getAllVendors().find(v => v.userId === currentUser.id);
+        if (vendor) {
+          vendorId = vendor.id;
+        }
+      } else if (currentUser.role === 'business') {
+        const vendor = dataManager.getAllVendors().find(v => v.userId === currentUser.id);
+        if (vendor) {
+          vendorId = vendor.id;
+        } else {
+          alert('Bạn cần được phê duyệt làm người bán trước khi thêm sản phẩm');
+          return;
+        }
+      }
+      
+      if (!vendorId) {
+        alert('Không tìm thấy thông tin người bán');
+        return;
+      }
+      
+      const productData = {
+        name: productName,
+        description: productDescription,
+        categoryId: 1,
+        vendorId: vendorId,
+        images: ['https://via.placeholder.com/176x176/22C55E/FFFFFF?text=' + encodeURIComponent(productName)],
+        units: units,
+        stock: 100,
+        sold: 0,
+        rating: 0,
+        reviews: 0,
+        certificate: 'https://via.placeholder.com/400x300/22C55E/FFFFFF?text=Chứng+Nhận+An+Toàn',
+        featured: false,
+        flashSale: false,
+        discount: 0,
+        createdAt: new Date().toISOString()
+      };
+      
+      dataManager.addProduct(productData);
+      alert('Sản phẩm đã được lưu thành công!');
+      window.location.href = '../product-management/product-management.html';
+    });
+  </script>
+</body>
+</html>

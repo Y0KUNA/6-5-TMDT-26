@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quản Lý Đơn Hàng - Doanh Nghiệp</title>
+  <link rel="stylesheet" href="../../css/style.css">
+  <link rel="stylesheet" href="../../css/business-orders.css">
+</head>
+<body>
+  <!-- Top Header -->
+  <div class="top-header">
+    <div class="top-nav">
+      <a href="#">Kênh Người Bán</a>
+      <a href="#">Trở thành Người bán Nông Sản Sạch</a>
+      <a href="#">Tải ứng dụng</a>
+    </div>
+    <div class="top-nav">
+      <a href="#">🔔 Thông báo</a>
+      <a href="#">❓ Hỗ trợ</a>
+      <a href="#">🌐 Tiếng Việt</a>
+      <a href="../register/register.html">Đăng Ký</a>
+      <a href="../login/login.html" id="loginLink">Đăng Nhập</a>
+    </div>
+  </div>
+
+  <!-- Main Header -->
+  <div class="main-header">
+    <a href="../home/index.html" class="logo">
+      <div class="logo-icon">🌱</div>
+      <div class="logo-text">
+        <h1>Nông Sản Sạch</h1>
+        <p>Organic Marketplace</p>
+      </div>
+    </a>
+  </div>
+
+  <!-- Main Content -->
+  <div class="container mt-32">
+    <div class="business-orders-container">
+      <!-- Header -->
+      <div class="business-header">
+        <div>
+          <h1 class="business-title">📋 Quản Lý Đơn Hàng</h1>
+          <p class="business-subtitle">Quản lý các yêu cầu mua hàng từ khách hàng</p>
+        </div>
+        <div style="display: flex; gap: 12px;">
+          <a href="../product-management/product-management.html" class="btn" style="background: #16A34A; color: #FFF; padding: 12px 24px; border-radius: 4px; text-decoration: none; font-weight: 600;">
+            📦 Quản Lý Sản Phẩm
+          </a>
+        </div>
+      </div>
+
+      <!-- Status Tabs -->
+      <div class="status-tabs">
+        <div class="status-tab active" data-status="pending">
+          Chờ xử lý (<span id="pendingCount">0</span>)
+        </div>
+        <div class="status-tab" data-status="shipping">
+          Đang vận chuyển (<span id="shippingCount">0</span>)
+        </div>
+        <div class="status-tab" data-status="delivered">
+          Đã giao hàng (<span id="deliveredCount">0</span>)
+        </div>
+        <div class="status-tab" data-status="return">
+          Yêu cầu trả hàng (<span id="returnCount">0</span>)
+        </div>
+      </div>
+
+      <!-- Orders List -->
+      <div id="businessOrdersList">
+        <!-- Orders will be loaded here -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Return Request Detail Modal -->
+  <div id="returnDetailModal" class="modal">
+    <div class="modal-overlay" onclick="closeReturnDetailModal()"></div>
+    <div class="return-detail-modal-content">
+      <div class="return-detail-header">
+        <h2 class="return-detail-title">Chi tiết yêu cầu trả hàng</h2>
+        <button class="close-btn" onclick="closeReturnDetailModal()">×</button>
+      </div>
+
+      <div class="return-detail-body" id="returnDetailBody">
+        <!-- Return request details will be loaded here -->
+      </div>
+
+      <div class="return-detail-footer">
+        <button class="btn btn-secondary" onclick="closeReturnDetailModal()">Đóng</button>
+        <button class="btn btn-success" onclick="approveReturn()">✅ Chấp nhận trả hàng</button>
+        <button class="btn btn-danger" onclick="rejectReturn()">❌ Từ chối trả hàng</button>
+        <button class="btn" style="background: #FF6B35; color: #FFF;" onclick="contactCustomer()">💬 Nhắn tin khách hàng</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../shared/data.js"></script>
+  <script src="../shared/data-business.js"></script>
+  <script src="./business-orders.js"></script>
+</body>
+</html>

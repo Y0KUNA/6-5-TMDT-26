@@ -1,0 +1,22 @@
+{
+  "name": "nong-san-sach",
+  "version": "1.0.0",
+  "description": "Nông Sản Sạch - Organic Marketplace",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx http-server -p 8080 -o",
+    "start-server": "node server/index.js",
+    "dev-server": "nodemon server/index.js"
+  },
+  "keywords": [
+    "organic",
+    "marketplace",
+    "ecommerce"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.2.1"
+  }
+}

@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Phê Duyệt Tài Khoản - Nông Sản Sạch</title>
+  <link rel="stylesheet" href="../../css/style.css">
+</head>
+<body>
+  <!-- Top Header -->
+  <div class="top-header">
+    <div class="top-nav">
+      <a href="#">Kênh Người Bán</a>
+      <a href="../register-business/register-business.html">Trở thành Người bán Nông Sản Sạch</a>
+      <a href="#">Tải ứng dụng</a>
+    </div>
+    <div class="top-nav">
+      <a href="#">🔔 Thông báo</a>
+      <a href="#">❓ Hỗ trợ</a>
+      <a href="#">🌐 Tiếng Việt</a>
+      <a href="../register/register.html">Đăng Ký</a>
+      <a href="../login/login.html">Đăng Nhập</a>
+    </div>
+  </div>
+
+  <!-- Main Header -->
+  <div class="main-header">
+    <a href="../home/index.html" class="logo">
+      <div class="logo-icon">🌱</div>
+      <div class="logo-text">
+        <h1>Nông Sản Sạch</h1>
+        <p>Organic Marketplace</p>
+      </div>
+    </a>
+
+    <div class="search-container">
+      <div class="search-box">
+        <input type="text" placeholder="Tìm kiếm nông sản sạch...">
+        <button class="search-btn">
+          <!-- icon -->
+        </button>
+      </div>
+    </div>
+
+    <a href="../cart/cart.html">
+      <svg class="cart-icon" viewBox="0 0 32 32" fill="none">
+        <path d="M4 4H6.66667L7.2 6.66667M7.2 6.66667H28L22.6667 17.3333M7.2 6.66667L9.33333 17.3333M22.6667 17.3333H9.33333M22.6667 17.3333V25.3333C22.6667 26.7478 21.5145 28 20 28H12C10.4855 28 9.33333 26.7478 9.33333 25.3333V17.3333" stroke="black" stroke-width="2"/>
+      </svg>
+    </a>
+  </div>
+
+  <!-- Approval Section -->
+  <div class="container mt-32">
+    <!-- Tab Navigation -->
+    <div style="background: #FFF; border-radius: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); margin-bottom: 24px;">
+      <div style="display: flex; gap: 0; border-bottom: 1px solid #E5E7EB;">
+        <button onclick="showApprovalTab('vendors')" id="vendorsTabBtn" class="tab-button" style="border: none; border-bottom: 3px solid #22C55E; background: #FFF; color: #22C55E; font-weight: 600;">
+          ⚡ Tài Khoản Bán Hàng
+        </button>
+        <button onclick="showApprovalTab('discounts')" id="discountsTabBtn" class="tab-button" style="border: none; border-bottom: 3px solid transparent; background: #FFF; color: #666;">
+          🎁 Khuyến Mãi
+        </button>
+      </div>
+    </div>
+
+    <!-- Vendor Approval Tab -->
+    <div id="vendorsTab" style="display: block;">
+      <div style="background: #FFF; border-radius: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">
+        <div class="admin-header">
+          <div>
+            <div class="admin-title">⚡ PHÊ DUYỆT TÀI KHOẢN BÁN HÀNG</div>
+            <div class="admin-subtitle">Quản lý các đơn đăng ký bán hàng đang chờ phê duyệt</div>
+          </div>
+        </div>
+
+        <div style="padding: 24px;">
+          <div id="vendorList">
+            <!-- Vendors will be loaded here -->
+          </div>
+
+          <div id="emptyState" style="display: none; text-align: center; padding: 48px;">
+            <p style="color: #666; font-size: 16px;">Không có đơn đăng ký nào đang chờ phê duyệt</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Discount Approval Tab -->
+    <div id="discountsTab" style="display: none;">
+      <div style="background: #FFF; border-radius: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">
+        <div class="admin-header">
+          <div>
+            <div class="admin-title">🎁 PHÊ DUYỆT KHUYẾN MÃI</div>
+            <div class="admin-subtitle">Quản lý các chương trình khuyến mãi đang chờ phê duyệt</div>
+          </div>
+        </div>
+
+        <div style="padding: 24px;">
+          <div id="promotionList">
+            <!-- Promotions will be loaded here -->
+          </div>
+
+          <div id="emptyPromotionState" style="display: none; text-align: center; padding: 48px;">
+            <p style="color: #666; font-size: 16px;">Không có chương trình khuyến mãi nào đang chờ phê duyệt</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reject Vendor Modal -->
+  <div id="rejectModal" class="modal">
+    <div class="modal-content" style="max-width: 500px; padding: 0;">
+      <div style="padding: 24px; border-bottom: 0.667px solid #F1F1F1;">
+        <h3 style="color: #333; font-size: 20px; font-weight: 600; margin-bottom: 8px;">Từ chối đơn đăng ký</h3>
+        <div style="color: #666; font-size: 14px;">
+          Bạn đang từ chối đơn đăng ký của: 
+          <span id="rejectVendorName" style="font-weight: 600;"></span>
+        </div>
+      </div>
+
+      <div style="padding: 24px;">
+        <div class="form-group">
+          <label style="color: #333; font-size: 14px; font-weight: 600; display: block; margin-bottom: 8px;">
+            Lý do từ chối <span style="color: #FF5722;">*</span>
+          </label>
+          <textarea id="rejectReason" class="form-textarea" rows="5" placeholder="Nhập lý do từ chối..." required></textarea>
+        </div>
+
+        <div style="display: flex; gap: 12px; margin-top: 24px;">
+          <button onclick="closeRejectModal()" class="btn btn-secondary" style="flex: 1;">Hủy</button>
+          <button onclick="confirmReject()" class="btn btn-danger" style="flex: 1;">Xác Nhận Từ Chối</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reject Promotion Modal -->
+  <div id="rejectPromotionModal" class="modal">
+    <div class="modal-content" style="max-width: 500px; padding: 0;">
+      <div style="padding: 24px; border-bottom: 0.667px solid #F1F1F1;">
+        <h3 style="color: #333; font-size: 20px; font-weight: 600; margin-bottom: 8px;">Từ chối chương trình khuyến mãi</h3>
+        <div style="color: #666; font-size: 14px;">
+          Bạn đang từ chối chương trình: 
+          <span id="rejectPromotionName" style="font-weight: 600;"></span>
+        </div>
+      </div>
+
+      <div style="padding: 24px;">
+        <div class="form-group">
+          <label style="color: #333; font-size: 14px; font-weight: 600; display: block; margin-bottom: 8px;">
+            Lý do từ chối <span style="color: #FF5722;">*</span>
+          </label>
+          <textarea id="rejectPromotionReason" class="form-textarea" rows="5" placeholder="Nhập lý do từ chối..." required></textarea>
+        </div>
+
+        <div style="display: flex; gap: 12px; margin-top: 24px;">
+          <button onclick="closeRejectPromotionModal()" class="btn btn-secondary" style="flex: 1;">Hủy</button>
+          <button onclick="confirmRejectPromotion()" class="btn btn-danger" style="flex: 1;">Xác Nhận Từ Chối</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../shared/data.js"></script>
+  <script src="./admin-approval.js"></script>
+</body>
+</html>

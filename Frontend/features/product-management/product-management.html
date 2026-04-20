@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quản Lý Sản Phẩm - Nông Sản Sạch</title>
+  <link rel="stylesheet" href="../../css/style.css">
+</head>
+<body style="background: #FFF;">
+  <div class="container" style="padding: 24px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px;">
+      <h1 style="color: #000; font-size: 24px; font-weight: 700;">Quản Lý Sản Phẩm</h1>
+      
+      <div style="display: flex; gap: 12px; align-items: center;">
+        <button onclick="showTab('stats')" class="btn" style="border: 1px solid #16A34A; background: #FFF; color: #16A34A;">Thống Kê</button>
+        <button onclick="showTab('add')" class="btn btn-success">Thêm Sản Phẩm</button>
+        <button onclick="showTab('list')" class="btn" style="border: 1px solid #16A34A; background: #FFF; color: #16A34A;">Danh Sách</button>
+        <a href="../discount-management/discount-management.html" class="btn" style="background: #F59E0B; color: #FFF; text-decoration: none; margin-left: 12px;">
+          🎁 Khuyến Mãi
+        </a>
+        <span id="businessNavLink" style="display: none;">
+          <a href="../business-orders/business-orders.html" class="btn" style="background: #3B82F6; color: #FFF; text-decoration: none; margin-left: 12px;">
+            📋 Quản Lý Đơn Hàng
+          </a>
+        </span>
+      </div>
+    </div>
+
+    <!-- Product List Tab -->
+    <div id="listTab" style="display: none;">
+      <div style="border-radius: 8px; background: #FFF; box-shadow: 0 10px 15px rgba(0,0,0,0.1); padding: 24px;">
+        <h2 style="color: #000; font-size: 20px; font-weight: 600; padding-bottom: 24px; border-bottom: 0.667px solid #E5E7EB; margin-bottom: 24px;">
+          Danh Sách Sản Phẩm
+        </h2>
+        
+        <table class="table">
+          <thead>
+            <tr style="background: #F9FAFB;">
+              <th>Sản Phẩm</th>
+              <th>Giá</th>
+              <th>Đã Bán</th>
+              <th>Doanh Thu</th>
+              <th>Đánh Giá</th>
+              <th>Thao Tác</th>
+            </tr>
+          </thead>
+          <tbody id="productsList">
+            <!-- Products will be loaded here -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Add Product Tab -->
+    <div id="addTab" style="display: none;"></div>
+
+    <!-- Statistics Tab -->
+    <div id="statsTab" style="display: none;"></div>
+  </div>
+
+  <script src="../shared/data.js"></script>
+  <script src="../shared/data-business.js"></script>
+  <script src="./product-management.js"></script>
+</body>
+</html>

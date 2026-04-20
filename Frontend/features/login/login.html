@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Đăng Nhập - Nông Sản Sạch</title>
+  <link rel="stylesheet" href="../../css/style.css">
+</head>
+<body>
+  <!-- Top Header -->
+  <div class="top-header">
+    <div class="top-nav">
+  
+    </div>
+    <div class="top-nav">
+
+      <a href="../register/register.html">Đăng Ký</a>
+      <a href="./login.html">Đăng Nhập</a>
+    </div>
+  </div>
+
+  <!-- Main Header -->
+  <div class="main-header">
+    <a href="../home/index.html" class="logo">
+      <div class="logo-icon">🌱</div>
+      <div class="logo-text">
+        <h1>Nông Sản Sạch</h1>
+        <p>Organic Marketplace</p>
+      </div>
+    </a>
+
+    <div class="search-container">
+      <div class="search-box">
+        <input type="text" placeholder="Tìm kiếm nông sản sạch...">
+        <button class="search-btn">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M17.5 17.5L12.5 12.5M14.1667 8.33333C14.1667 11.555 11.555 14.1667 8.33333 14.1667C5.11167 14.1667 2.5 11.555 2.5 8.33333C2.5 5.11167 5.11167 2.5 8.33333 2.5C11.555 2.5 14.1667 5.11167 14.1667 8.33333Z" stroke="white" stroke-width="2"/>
+          </svg>
+        </button>
+      </div>
+      <div class="search-suggestions">
+        <a href="#">rau sạch</a>
+        <a href="#">trái cây organic</a>
+        <a href="#">thịt sạch</a>
+        <a href="#">gạo ST25</a>
+      </div>
+    </div>
+
+    <a href="../cart/cart.html">
+      <svg class="cart-icon" viewBox="0 0 32 32" fill="none">
+        <path d="M4 4H6.66667L7.2 6.66667M7.2 6.66667H28L22.6667 17.3333M7.2 6.66667L9.33333 17.3333M22.6667 17.3333H9.33333M22.6667 17.3333V25.3333C22.6667 26.7478 21.5145 28 20 28H12C10.4855 28 9.33333 26.7478 9.33333 25.3333V17.3333" stroke="black" stroke-width="2"/>
+      </svg>
+    </a>
+  </div>
+
+  <!-- Login Form -->
+  <div class="container mt-32" style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+    <div class="card" style="width: 100%; max-width: 500px;">
+      <div class="card-header">
+        <h2 class="card-title">Đăng nhập</h2>
+        <p class="card-subtitle">Chào mừng bạn quay trở lại!</p>
+      </div>
+
+      <form id="loginForm">
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" class="form-input" placeholder="Nhập email của bạn" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Mật khẩu</label>
+          <input type="password" class="form-input" placeholder="Nhập mật khẩu" required>
+        </div>
+
+        <div id="errorMessage" style="color: #EF4444; font-size: 14px; margin-bottom: 16px; display: none;"></div>
+
+        <button type="submit" class="btn btn-success" style="width: 100%;">Đăng nhập</button>
+
+        <div class="text-center mt-16">
+          <span style="color: #666; font-size: 16px;">Chưa có tài khoản? </span>
+          <a href="../register/register.html" style="color: #22C55E; font-size: 16px; font-weight: 600; text-decoration: none;">Đăng ký ngay</a>
+        </div>
+
+        <div class="text-center mt-16" style="padding: 16px; background: #F0FDF4; border-radius: 4px; border: 1px solid #22C55E;">
+          <p style="color: #666; font-size: 14px; margin-bottom: 8px;">Tài khoản test:</p>
+          <p style="color: #333; font-size: 14px;"><strong>Admin:</strong> admin@nongsanecommerce.vn / Admin@123456</p>
+          <p style="color: #333; font-size: 14px;"><strong>User:</strong> abc@123.com / 123123</p>
+          <p style="color: #333; font-size: 14px;"><strong>Business:</strong> nongtrai@organic.vn / business123</p>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="../shared/data.js"></script>
+  <script src="../shared/data-business.js"></script>
+  <script src="./login.js"></script>
+</body>
+</html>

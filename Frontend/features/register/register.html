@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Đăng Ký - Nông Sản Sạch</title>
+  <link rel="stylesheet" href="../../css/style.css">
+</head>
+<body>
+  <!-- Top Header -->
+  <div class="top-header">
+    <div class="top-nav">
+      <a href="#">Kênh Người Bán</a>
+      <a href="#">Trở thành Người bán Nông Sản Sạch</a>
+      <a href="#">Tải ứng dụng</a>
+    </div>
+    <div class="top-nav">
+      <a href="#">🔔 Thông báo</a>
+      <a href="#">❓ Hỗ trợ</a>
+      <a href="#">🌐 Tiếng Việt</a>
+      <a href="./register.html">Đăng Ký</a>
+      <a href="../login/login.html">Đăng Nhập</a>
+    </div>
+  </div>
+
+  <!-- Main Header -->
+  <div class="main-header">
+    <a href="../home/index.html" class="logo">
+      <div class="logo-icon">🌱</div>
+      <div class="logo-text">
+        <h1>Nông Sản Sạch</h1>
+        <p>Organic Marketplace</p>
+      </div>
+    </a>
+
+    <div class="search-container">
+      <div class="search-box">
+        <input type="text" placeholder="Tìm kiếm nông sản sạch...">
+        <button class="search-btn">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M17.5 17.5L12.5 12.5M14.1667 8.33333C14.1667 11.555 11.555 14.1667 8.33333 14.1667C5.11167 14.1667 2.5 11.555 2.5 8.33333C2.5 5.11167 5.11167 2.5 8.33333 2.5C11.555 2.5 14.1667 5.11167 14.1667 8.33333Z" stroke="white" stroke-width="2"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <a href="../cart/cart.html">
+      <svg class="cart-icon" viewBox="0 0 32 32" fill="none">
+        <path d="M4 4H6.66667L7.2 6.66667M7.2 6.66667H28L22.6667 17.3333M7.2 6.66667L9.33333 17.3333M22.6667 17.3333H9.33333M22.6667 17.3333V25.3333C22.6667 26.7478 21.5145 28 20 28H12C10.4855 28 9.33333 26.7478 9.33333 25.3333V17.3333" stroke="black" stroke-width="2"/>
+      </svg>
+    </a>
+  </div>
+
+  <!-- Register Form -->
+  <div class="container mt-32" style="display: flex; justify-content: center; padding-bottom: 48px;">
+    <div class="card" style="width: 100%; max-width: 500px;">
+      <div class="card-header">
+        <h2 class="card-title">Đăng ký</h2>
+        <p class="card-subtitle">Tạo tài khoản mới để bắt đầu mua sắm</p>
+      </div>
+
+      <form id="registerForm">
+        <div class="grid grid-2 gap-16">
+          <div class="form-group">
+            <label class="form-label">Họ và tên *</label>
+            <input type="text" class="form-input" name="fullName" placeholder="Nhập họ và tên" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Ngày sinh</label>
+            <input type="date" class="form-input" name="dateOfBirth">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Email *</label>
+          <input type="email" class="form-input" name="email" placeholder="Nhập email" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Số điện thoại *</label>
+          <input type="tel" class="form-input" name="phone" placeholder="Nhập số điện thoại" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Địa chỉ *</label>
+          <textarea class="form-textarea" name="address" rows="3" placeholder="Nhập địa chỉ" required></textarea>
+        </div>
+
+        <div class="grid grid-2 gap-16">
+          <div class="form-group">
+            <label class="form-label">Mật khẩu *</label>
+            <input type="password" class="form-input" name="password" placeholder="Nhập mật khẩu" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Xác nhận mật khẩu *</label>
+            <input type="password" class="form-input" name="confirmPassword" placeholder="Nhập lại mật khẩu" required>
+          </div>
+        </div>
+
+        <div class="checkbox-wrapper">
+          <input type="checkbox" id="isVendor" name="isVendor">
+          <label for="isVendor">Đăng ký bán hàng</label>
+        </div>
+
+        <!-- Vendor Information (hidden by default) -->
+        <div id="vendorSection" style="display: none; border-top: 1px solid #DDD; padding-top: 24px; margin-top: 16px;">
+          <h3 style="color: #333; font-size: 16px; font-weight: 500; margin-bottom: 16px;">Thông tin doanh nghiệp</h3>
+          
+          <div class="form-group">
+            <label class="form-label">Tên doanh nghiệp *</label>
+            <input type="text" class="form-input" name="businessName" placeholder="Nhập tên doanh nghiệp">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Địa chỉ doanh nghiệp *</label>
+            <textarea class="form-textarea" name="businessAddress" rows="3" placeholder="Nhập địa chỉ doanh nghiệp"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Số điện thoại liên hệ *</label>
+            <input type="tel" class="form-input" name="businessPhone" placeholder="Nhập số điện thoại liên hệ">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Giấy phép bán hàng *</label>
+            <div style="border: 2px dashed #DDD; border-radius: 4px; padding: 32px; text-align: center; cursor: pointer;" onclick="document.getElementById('licenseFile').click()">
+              <svg width="32" height="32" style="margin: 0 auto 8px;">
+                <path d="M16 4V20M16 4L10.667 9.333M16 4L21.333 9.333M6.667 20V24C6.667 24.707 6.948 25.386 7.448 25.886C7.948 26.386 8.626 26.667 9.333 26.667H22.667C23.374 26.667 24.052 26.386 24.552 25.886C25.053 25.386 25.333 24.707 25.333 24V20" stroke="#666" stroke-width="2"/>
+              </svg>
+              <div style="color: #666; font-size: 14px; margin-bottom: 4px;">Tải lên giấy phép bán hàng</div>
+              <div style="color: #999; font-size: 12px;">PNG, JPG, PDF (tối đa 5MB)</div>
+            </div>
+            <input type="file" id="licenseFile" accept="image/*,.pdf" style="display: none;">
+            <div id="licensePreviewContainer" style="display:none; margin-top:12px; text-align:left;">
+              <img id="licensePreviewImg" src="" alt="preview" style="max-width:100%; max-height:200px; display:block; margin-bottom:8px;" />
+              <div id="licensePreviewInfo" style="font-size:13px; color:#666"></div>
+            </div>
+          </div>
+        </div>
+
+        <div id="errorMessage" style="color: #EF4444; font-size: 14px; margin-bottom: 16px; display: none;"></div>
+
+        <button type="submit" class="btn btn-success" style="width: 100%;">Đăng ký</button>
+
+        <div class="text-center mt-16">
+          <span style="color: #666; font-size: 14px;">Đã có tài khoản? </span>
+          <a href="../login/login.html" style="color: #22C55E; font-size: 14px; font-weight: 500; text-decoration: none;">Đăng nhập ngay</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="../shared/data.js"></script>
+  <script src="./register.js"></script>
+</body>
+</html>
