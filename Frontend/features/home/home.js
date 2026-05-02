@@ -312,22 +312,17 @@ document.addEventListener('DOMContentLoaded', function () {
   if (sortEl) sortEl.addEventListener('change', loadProducts);
   loadProducts();
 
-  // Update auth section if user is logged in
+  // Update auth section in the top nav
   const currentUser = dataManager.getCurrentUser();
-  console.log(currentUser.role);
-  console.log(currentUser);
+  console.log('currentUser:', currentUser);
+
+  const topNav = document.querySelector('.top-header .top-nav:last-child');
+  if (!topNav) return;
 
   if (currentUser) {
-    
-    const topNav = document.querySelector('.top-header .top-nav:last-child');
-    //const loginLink = document.getElementById('loginLink');
-    const registerLink = document.getElementById('registerLink');
-
-    if (!topNav ) return;
     console.log('User is logged in, updating header');
-    if (registerLink) registerLink.style.display = 'none';
-    //loginLink.style.display = 'none';
 
+    // Build user menu
     const userMenu = document.createElement('div');
     userMenu.style.cssText = 'position: relative; display: inline-block;';
 
@@ -343,26 +338,18 @@ document.addEventListener('DOMContentLoaded', function () {
     logoutLink.href = '#';
     logoutLink.textContent = 'Đăng xuất';
     logoutLink.style.cssText = 'display: block; padding: 12px; color: red;';
-    logoutLink.onclick = function (e) {
-      e.preventDefault();
-      handleLogout();
-    };
+    logoutLink.onclick = function (e) { e.preventDefault(); handleLogout(); };
 
     const role = (currentUser.role || '').toLowerCase().trim();
     console.log('User role for menu rendering:', role);
-    if (role == 'admin') {
-      // ADMIN
-      console.log('Rendering admin menu');
-  const adminLink = document.createElement('a');
-  // relative path from features/home/index.html -> features/admin-approval/admin-approval.html
-  adminLink.href = '../admin-approval/admin-approval.html';
+
+    if (role === 'admin') {
+      const adminLink = document.createElement('a');
+      adminLink.href = '../admin-approval/admin-approval.html';
       adminLink.textContent = 'Quản trị hệ thống';
       adminLink.style.cssText = 'display: block; padding: 12px; color: #333; text-decoration: none;';
-
       dropdown.appendChild(adminLink);
     } else {
-      // USER THƯỜNG
-      console.log('Rendering regular user menu');
       const profileLink = document.createElement('a');
       profileLink.href = '../profile/profile.html';
       profileLink.textContent = 'Hồ sơ';
@@ -380,19 +367,14 @@ document.addEventListener('DOMContentLoaded', function () {
     dropdown.appendChild(logoutLink);
     userMenu.appendChild(userButton);
     userMenu.appendChild(dropdown);
+    topNav.innerHTML = ''; // clear any existing content
     topNav.appendChild(userMenu);
 
-    userButton.onclick = function (e) {
-      e.preventDefault();
-      e.stopPropagation();
-      dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
-    };
-
-    document.addEventListener('click', function (e) {
-      if (!userMenu.contains(e.target)) {
-        dropdown.style.display = 'none';
-      }
-    });
+    userButton.onclick = function (e) { e.preventDefault(); e.stopPropagation(); dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block'; };
+    document.addEventListener('click', function (e) { if (!userMenu.contains(e.target)) { dropdown.style.display = 'none'; } });
+  } else {
+    // Not logged in: show Register / Login links
+    topNav.innerHTML = '<a href="../register/register.html" id="registerLink">Đăng Ký</a><a href="../login/login.html" id="loginLink" style="margin-left:12px;">Đăng Nhập</a>';
   }
 });
 
