@@ -1,9 +1,10 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const bodyParser = require('body-parser');
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 
 app.use(helmet());
 app.use(
@@ -28,11 +29,13 @@ app.use((err, req, res, next) => {
 const authRoutes = require('./routes/auth');
 const productRoutes = require('./routes/products');
 const vendorRoutes = require('./routes/vendors');
+const cartRoutes = require('./routes/cart');
 const path = require('path');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/vendors', vendorRoutes);
+app.use('/api/cart', cartRoutes);
 
 // serve uploaded files statically (files saved by register endpoint)
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

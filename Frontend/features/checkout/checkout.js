@@ -128,21 +128,34 @@ function confirmCheckout() {
   const shippingFee = 30000;
   const totalAmount = subtotal + shippingFee;
 
-  const order = dataManager.createOrder({
-    items: checkoutItems,
-    shippingInfo: {
-      fullName,
-      phone,
-      address
-    },
-    paymentMethod: selectedPaymentMethod,
-    shippingFee,
-    totalAmount,
-    status: 'pending'
-  });
+  // If authenticated with server, call server checkout API
+  const token = localStorage.getItem('authToken');
+  if (token) {
+    const payload = { shippingAddress: address, paymentMethod: selectedPaymentMethod };
+    try {
+      fetch('/api/cart/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token }, body: JSON.stringify(payload) })
+        .then(r => r.json())
+        .then(body => {
+          sessionStorage.removeItem('checkoutItems');
+          alert('Đặt hàng thành công! Mã đơn hàng: #' + (body.orders ? body.orders.join(',') : '')); 
+          window.location.href = '../home/index.html';
+        })
+        .catch(err => {
+          console.warn('Server checkout failed, falling back to client', err);
+          const order = dataManager.createOrder({ items: checkoutItems, shippingInfo: { fullName, phone, address }, paymentMethod: selectedPaymentMethod, shippingFee, totalAmount, status: 'pending' });
+          sessionStorage.removeItem('checkoutItems');
+          alert('Đặt hàng thành công! Mã đơn hàng: #' + order.id);
+          window.location.href = '../home/index.html';
+        });
+      return;
+    } catch (err) {
+      console.warn('Checkout API error', err);
+    }
+  }
 
+  // Fallback offline order creation
+  const order = dataManager.createOrder({ items: checkoutItems, shippingInfo: { fullName, phone, address }, paymentMethod: selectedPaymentMethod, shippingFee, totalAmount, status: 'pending' });
   sessionStorage.removeItem('checkoutItems');
-
   alert('Đặt hàng thành công! Mã đơn hàng: #' + order.id);
   window.location.href = '../home/index.html';
 }

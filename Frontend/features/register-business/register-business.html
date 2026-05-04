@@ -7,32 +7,8 @@
   <link rel="stylesheet" href="../../css/style.css">
 </head>
 <body>
-  <!-- Top Header -->
-  <div class="top-header">
-    <div class="top-nav">
-      <a href="#">Kênh Người Bán</a>
-      <a href="../register-business/register-business.html">Trở thành Người bán Nông Sản Sạch</a>
-      <a href="#">Tải ứng dụng</a>
-    </div>
-    <div class="top-nav">
-      <a href="#">🔔 Thông báo</a>
-      <a href="#">❓ Hỗ trợ</a>
-      <a href="#">🌐 Tiếng Việt</a>
-      <a href="../register/register.html">Đăng Ký</a>
-      <a href="../login/login.html">Đăng Nhập</a>
-    </div>
-  </div>
-
-  <!-- Main Header -->
-  <div class="main-header">
-    <a href="../home/index.html" class="logo">
-      <div class="logo-icon">🌱</div>
-      <div class="logo-text">
-        <h1>Nông Sản Sạch</h1>
-        <p>Organic Marketplace</p>
-      </div>
-    </a>
-  </div>
+  <!-- Shared Header Placeholder -->
+  <div id="siteHeader"></div>
 
   <!-- Register Form -->
   <div class="container mt-32" style="display: flex; justify-content: center; padding-bottom: 48px;">
@@ -50,6 +26,7 @@
   </div>
 
   <script src="../shared/data.js"></script>
+  <script src="../shared/header.js"></script>
   <script>
     // Inline logic moved here with redirects to feature pages
     document.getElementById('registerBusinessForm')?.addEventListener('submit', function(e) {

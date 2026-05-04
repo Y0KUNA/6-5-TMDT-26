@@ -54,4 +54,50 @@ router.post('/', async (req, res) => {
   }
 });
 
+// GET /api/products/:id  -> detailed product with images
+router.get('/:id', async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (Number.isNaN(id)) return res.status(400).json({ error: 'Invalid product id' });
+
+  try {
+    // Build a query that returns product columns and an images array (prefix baseUrl for relative paths)
+    const q = `SELECT p.product_id, p.enterprise_id, p.category_id, p.name, p.description, p.price, p.unit, p.stock_quantity, p.origin, p.certification, p.created_at,
+      pi.images
+      FROM products p
+      LEFT JOIN LATERAL (
+        SELECT COALESCE(json_agg(CASE WHEN image_url ILIKE 'http%' THEN image_url ELSE $1 || image_url END ORDER BY is_primary DESC), '[]') AS images
+        FROM product_images
+        WHERE product_id = p.product_id
+      ) pi ON true
+      WHERE p.product_id = $2
+      LIMIT 1`;
+
+    const result = await db.query(q, [baseUrl, id]);
+    if (!result.rows || result.rows.length === 0) return res.status(404).json({ error: 'Product not found' });
+
+    const row = result.rows[0];
+
+    // Normalize response shape for frontend convenience
+    const product = {
+      id: row.product_id,
+      enterpriseId: row.enterprise_id,
+      categoryId: row.category_id,
+      name: row.name,
+      description: row.description,
+      price: Number(row.price),
+      unit: row.unit,
+      stockQuantity: row.stock_quantity,
+      origin: row.origin,
+      certification: row.certification,
+      images: row.images || [],
+      createdAt: row.created_at
+    };
+
+    return res.json({ product });
+  } catch (err) {
+    console.error('GET /api/products/:id error', err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 module.exports = router;

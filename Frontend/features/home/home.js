@@ -273,7 +273,7 @@ function loadFeaturedProducts() {
 // Fetch products from backend and map to front-end product shape
 async function fetchProducts() {
   try {
-    const resp = await fetch(window.PRODUCTS_API_URL || 'http://localhost:3000/api/products');
+    const resp = await fetch(window.PRODUCTS_API_URL || 'http://localhost:3001/api/products');
     if (!resp.ok) throw new Error('API returned ' + resp.status);
     const body = await resp.json();
     const rows = Array.isArray(body.products) ? body.products : [];
@@ -312,17 +312,21 @@ document.addEventListener('DOMContentLoaded', function () {
   if (sortEl) sortEl.addEventListener('change', loadProducts);
   loadProducts();
 
-  // Update auth section in the top nav
+  // Update auth section if user is logged in
   const currentUser = dataManager.getCurrentUser();
-  console.log('currentUser:', currentUser);
-
-  const topNav = document.querySelector('.top-header .top-nav:last-child');
-  if (!topNav) return;
-
+  console.log(currentUser);
   if (currentUser) {
-    console.log('User is logged in, updating header');
+    const topNav = document.querySelector('.top-header .top-nav:last-child');
+    const loginLink = document.getElementById('loginLink');
+    const registerLink = document.getElementById('registerLink');
 
-    // Build user menu
+    if (!topNav || !loginLink) return;
+
+    // Ẩn login / register
+    if (registerLink) registerLink.style.display = 'none';
+    loginLink.style.display = 'none';
+
+    // Tạo menu user
     const userMenu = document.createElement('div');
     userMenu.style.cssText = 'position: relative; display: inline-block;';
 
@@ -334,47 +338,58 @@ document.addEventListener('DOMContentLoaded', function () {
     const dropdown = document.createElement('div');
     dropdown.style.cssText = 'display: none; position: absolute; top: 100%; right: 0; background: white; border: 1px solid #E5E7EB; border-radius: 4px; min-width: 200px; z-index: 10000;';
 
+    const profileLink = document.createElement('a');
+    profileLink.href = '../profile/profile.html';
+    profileLink.textContent = 'Hồ sơ';
+    profileLink.style.cssText = 'display: block; padding: 12px; color: #333; text-decoration: none;';
+
     const logoutLink = document.createElement('a');
     logoutLink.href = '#';
     logoutLink.textContent = 'Đăng xuất';
     logoutLink.style.cssText = 'display: block; padding: 12px; color: red;';
-    logoutLink.onclick = function (e) { e.preventDefault(); handleLogout(); };
+    logoutLink.onclick = function (e) {
+      e.preventDefault();
+      handleLogout();
+    };
 
-    const role = (currentUser.role || '').toLowerCase().trim();
-    console.log('User role for menu rendering:', role);
+    // If admin, show only system admin link (no profile / order links)
+    try {
+      if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'ADMIN')) {
+        const adminMgmtLink = document.createElement('a');
+        adminMgmtLink.href = '../product-management/product-management.html';
+        adminMgmtLink.textContent = 'Quản trị hệ thống';
+        adminMgmtLink.style.cssText = 'display: block; padding: 12px; color: #333; text-decoration: none;';
 
-    if (role === 'admin') {
-      const adminLink = document.createElement('a');
-      adminLink.href = '../admin-approval/admin-approval.html';
-      adminLink.textContent = 'Quản trị hệ thống';
-      adminLink.style.cssText = 'display: block; padding: 12px; color: #333; text-decoration: none;';
-      dropdown.appendChild(adminLink);
-    } else {
-      const profileLink = document.createElement('a');
-      profileLink.href = '../profile/profile.html';
-      profileLink.textContent = 'Hồ sơ';
-      profileLink.style.cssText = 'display: block; padding: 12px; color: #333; text-decoration: none;';
-
-      const orderLink = document.createElement('a');
-      orderLink.href = '../orders/orders.html';
-      orderLink.textContent = 'Quản lý đơn hàng';
-      orderLink.style.cssText = 'display: block; padding: 12px; color: #333; text-decoration: none;';
-
+        dropdown.appendChild(adminMgmtLink);
+      } else {
+        // non-admin users see their profile link
+        dropdown.appendChild(profileLink);
+      }
+    } catch (e) {
+      console.warn('Could not determine user role for admin links', e);
       dropdown.appendChild(profileLink);
-      dropdown.appendChild(orderLink);
     }
 
     dropdown.appendChild(logoutLink);
+
     userMenu.appendChild(userButton);
     userMenu.appendChild(dropdown);
-    topNav.innerHTML = ''; // clear any existing content
+
+    // Gắn vào đúng chỗ
     topNav.appendChild(userMenu);
 
-    userButton.onclick = function (e) { e.preventDefault(); e.stopPropagation(); dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block'; };
-    document.addEventListener('click', function (e) { if (!userMenu.contains(e.target)) { dropdown.style.display = 'none'; } });
-  } else {
-    // Not logged in: show Register / Login links
-    topNav.innerHTML = '<a href="../register/register.html" id="registerLink">Đăng Ký</a><a href="../login/login.html" id="loginLink" style="margin-left:12px;">Đăng Nhập</a>';
+    // Toggle
+    userButton.onclick = function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+    };
+
+    document.addEventListener('click', function (e) {
+      if (!userMenu.contains(e.target)) {
+        dropdown.style.display = 'none';
+      }
+    });
   }
 });
 

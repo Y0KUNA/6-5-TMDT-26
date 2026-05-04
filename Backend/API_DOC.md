@@ -119,6 +119,26 @@ Response:
   ]
 }
 
+### GET /api/products/:id
+
+Return detailed information for a single product. Example response:
+
+{
+  "product": {
+    "id": 1,
+    "name": "Rau Cải Xanh Hữu Cơ",
+    "description": "...",
+    "price": 25000,
+    "unit": "kg",
+    "stockQuantity": 200,
+    "origin": "Đà Lạt",
+    "certification": "VietGAP",
+    "images": ["http://localhost:3000/uploads/abc.jpg", "http://localhost:3000/uploads/def.jpg"],
+    "createdAt": "2024-02-01T..."
+  }
+}
+
+404 is returned when the product does not exist.
 
 ### POST /api/products
 (Create product) — implementation may exist for admin/product-management pages. Payload and auth depend on the route implementation. If you need this, check `server/routes/products.js` for required fields and auth checks.
