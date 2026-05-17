@@ -214,6 +214,8 @@ function mountBusinessOrdersTab(container) {
 
     // expose minimal business-manager functions or reuse existing global businessManager if present
     boCurrentStatus = 'pending';
+    // show account name
+    try { const acctEl = container.querySelector('#bo-account-name'); if (acctEl) acctEl.textContent = currentUser.fullName || currentUser.email || '-'; } catch (e) {}
     boLoadOrders();
     boUpdateCounts();
   } catch (e) { console.warn('mountBusinessOrdersTab failed', e); }
@@ -224,14 +226,42 @@ let boCurrentStatus = 'pending';
 function boUpdateCounts() {
   try {
     const businessId = getUserId(currentUser);
-    const pendingOrders = (typeof businessManager !== 'undefined' ? businessManager.getOrdersByStatus(businessId, 'preparing') : []);
-    const shippingOrders = (typeof businessManager !== 'undefined' ? businessManager.getOrdersByStatus(businessId, 'shipping') : []);
-    const deliveredOrders = (typeof businessManager !== 'undefined' ? businessManager.getOrdersByStatus(businessId, 'delivered') : []);
-    const returnRequests = (typeof businessManager !== 'undefined' ? businessManager.getReturnRequestsByBusiness(businessId) : []);
-    document.getElementById('bo-pendingCount').textContent = pendingOrders.length;
-    document.getElementById('bo-shippingCount').textContent = shippingOrders.length;
-    document.getElementById('bo-deliveredCount').textContent = deliveredOrders.length;
-    document.getElementById('bo-returnCount').textContent = returnRequests.length;
+    // Prefer in-memory businessManager if it exposes the helpers; otherwise fetch from server
+    const hasBM = (typeof businessManager !== 'undefined');
+    const hasGetOrdersByStatus = hasBM && typeof businessManager.getOrdersByStatus === 'function';
+    const hasGetReturnRequests = hasBM && typeof businessManager.getReturnRequestsByBusiness === 'function';
+
+    if (hasGetOrdersByStatus) {
+      const pendingOrders = businessManager.getOrdersByStatus(businessId, 'preparing');
+      const shippingOrders = businessManager.getOrdersByStatus(businessId, 'shipping');
+      const deliveredOrders = businessManager.getOrdersByStatus(businessId, 'delivered');
+      const returnRequests = hasGetReturnRequests ? businessManager.getReturnRequestsByBusiness(businessId) : [];
+      document.getElementById('bo-pendingCount').textContent = pendingOrders.length;
+      document.getElementById('bo-shippingCount').textContent = shippingOrders.length;
+      document.getElementById('bo-deliveredCount').textContent = deliveredOrders.length;
+      document.getElementById('bo-returnCount').textContent = returnRequests.length;
+    } else {
+      // Server fallback: query orders and count statuses
+      (async () => {
+        try {
+          const resp = await fetch('http://localhost:3001/api/orders?enterpriseId=' + encodeURIComponent(businessId));
+          if (!resp.ok) throw new Error('fetch failed');
+          const body = await resp.json();
+          const orders = body.orders || [];
+          const pending = orders.filter(o => (String(o.status || o.order_status || '').toLowerCase()).includes('prepar') ).length;
+          const shipping = orders.filter(o => (String(o.status || o.order_status || '').toLowerCase()).includes('ship') ).length;
+          const delivered = orders.filter(o => (String(o.status || o.order_status || '').toLowerCase()).includes('deliver') ).length;
+          // No server return-requests endpoint in this project by default; show 0 when missing
+          const returns = 0;
+          document.getElementById('bo-pendingCount').textContent = pending;
+          document.getElementById('bo-shippingCount').textContent = shipping;
+          document.getElementById('bo-deliveredCount').textContent = delivered;
+          document.getElementById('bo-returnCount').textContent = returns;
+        } catch (e) {
+          console.warn('boUpdateCounts server fallback failed', e);
+        }
+      })();
+    }
   } catch (e) { console.warn('boUpdateCounts', e); }
 }
 
@@ -241,31 +271,176 @@ function boLoadOrders() {
     if (!listEl) return;
     const businessId = getUserId(currentUser);
     let items = [];
+    const hasBM = (typeof businessManager !== 'undefined');
+    const hasGetOrdersByStatus = hasBM && typeof businessManager.getOrdersByStatus === 'function';
+    const hasGetReturnRequests = hasBM && typeof businessManager.getReturnRequestsByBusiness === 'function';
+
     if (boCurrentStatus === 'return') {
-      items = (typeof businessManager !== 'undefined' ? businessManager.getReturnRequestsByBusiness(businessId) : []);
-      listEl.innerHTML = items.length === 0 ? '<div class="empty-state"><p class="empty-state-text">Không có yêu cầu trả hàng nào</p></div>' : items.map(r => boRenderReturnRequest(r)).join('');
+      if (hasGetReturnRequests) {
+        items = businessManager.getReturnRequestsByBusiness(businessId);
+        listEl.innerHTML = items.length === 0 ? '<div class="empty-state"><p class="empty-state-text">Không có yêu cầu trả hàng nào</p></div>' : items.map(r => boRenderReturnRequest(r)).join('');
+      } else {
+        // No return API available; show empty state
+        listEl.innerHTML = '<div class="empty-state"><p class="empty-state-text">Không có yêu cầu trả hàng nào</p></div>';
+      }
     } else {
       const orderStatus = boCurrentStatus === 'pending' ? 'preparing' : boCurrentStatus;
-      items = (typeof businessManager !== 'undefined' ? businessManager.getOrdersByStatus(businessId, orderStatus) : []);
-      listEl.innerHTML = items.length === 0 ? '<div class="empty-state"><p class="empty-state-text">Không có đơn hàng nào</p></div>' : items.map(o => boRenderOrder(o)).join('');
+      if (hasGetOrdersByStatus) {
+        items = businessManager.getOrdersByStatus(businessId, orderStatus);
+        listEl.innerHTML = items.length === 0 ? '<div class="empty-state"><p class="empty-state-text">Không có đơn hàng nào</p></div>' : items.map(o => boRenderOrder(o)).join('');
+      } else {
+        // Server fallback: fetch orders and filter by status
+        (async () => {
+          try {
+            const resp = await fetch('http://localhost:3001/api/orders?enterpriseId=' + encodeURIComponent(businessId));
+            if (!resp.ok) throw new Error('fetch failed');
+            const body = await resp.json();
+            const orders = body.orders || [];
+            const filtered = orders.filter(o => {
+              const s = String(o.status || o.order_status || '').toLowerCase();
+              const target = String(orderStatus || '').toLowerCase();
+              if (target === 'preparing') return s.includes('prepar') || s.includes('prepare') || s === 'preparing';
+              return s.includes(target);
+            });
+            if (filtered.length === 0) {
+              listEl.innerHTML = '<div class="empty-state"><p class="empty-state-text">Không có đơn hàng nào</p></div>';
+            } else {
+              // Normalize server order shape to what boRenderOrder expects
+              listEl.innerHTML = filtered.map(o => boRenderOrder(normalizeServerOrder(o))).join('');
+            }
+          } catch (e) {
+            console.error('boLoadOrders server fallback', e);
+            listEl.innerHTML = '<div class="empty-state"><p class="empty-state-text">Không thể tải đơn hàng</p></div>';
+          }
+        })();
+      }
     }
   } catch (e) { console.error('boLoadOrders', e); }
 }
 
-function boRenderOrder(order) {
+// Helper: normalize server order object to expected fields
+function normalizeServerOrder(o) {
+  if (!o) return o;
+  return {
+    id: o.id || o.order_id || o.orderId || o.id_external || '',
+    orderDate: o.order_date || o.orderDate || o.created_at || o.createdAt || o.created || '',
+    customerName: o.customer_name || o.customerName || o.customer || o.customer_fullname || '',
+    totalAmount: o.total_amount || o.totalAmount || o.total || o.grand_total || 0,
+    status: canonicalStatus(o.status || o.order_status || o.status_text || ''),
+    // ensure items array exists and normalize likely item field names
+    items: (o.items || o.order_items || o.orderItems || o.items_list || []).map(it => ({
+      productName: it.product_name || it.productName || it.name || it.title || '',
+      image: it.image || it.product_image || it.productImage || '',
+      quantity: it.quantity || it.qty || it.count || 1,
+      price: it.price || it.unit_price || it.unitPrice || it.amount || 0,
+      productId: it.product_id || it.productId || it.id || null
+    })),
+    businessName: o.business_name || o.businessName || o.sellerName || o.vendorName || '' ,
+    trackingNumber: o.tracking_number || o.trackingNumber || null
+  };
+}
+
+// Map various server status tokens (including SQL ENUM UPPERCASE) to canonical lowercase statuses
+function canonicalStatus(s) {
+  if (!s) return '';
+  const raw = String(s).trim();
+  const up = raw.toUpperCase();
+  if (['PENDING'].includes(up)) return 'pending';
+  if (['PREPARING', 'PENDING', 'PROCESSING'].includes(up)) return 'preparing';
+  if (['SHIPPING', 'DELIVERING', 'DELIVERING', 'DELIVERING'].includes(up)) return 'shipping';
+  if (['DELIVERED'].includes(up)) return 'delivered';
+  if (['COMPLETED'].includes(up)) return 'completed';
+  if (['CANCELLED', 'CANCELED'].includes(up)) return 'cancelled';
+  // fallback to lowercased token
+  return raw.toLowerCase();
+}
+
+// Local renderer for in-memory businessManager orders (customer view)
+function renderOrderCardLocal(order) {
+  const statusLabels = {
+    preparing: 'Đang chuẩn bị',
+    shipping: 'Đang vận chuyển',
+    delivered: 'Đã giao hàng',
+    completed: 'Hoàn thành'
+  };
+
+  const statusClass = order.status;
+  const statusLabel = statusLabels[order.status] || order.status;
+
+  // guard against missing items
+  const items = Array.isArray(order.items) ? order.items : [];
+
   return `
-    <div class="business-order-card" style="border:1px solid #E5E7EB; padding:12px; margin-bottom:12px; border-radius:8px;">
-      <div style="display:flex; justify-content:space-between;">
-        <div><strong>Đơn #${order.id}</strong> • ${order.customerName || ''}</div>
-        <div>${formatDateTime(order.orderDate)}</div>
+    <div class="order-card">
+      <div class="order-card-header">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <span class="order-id">Đơn hàng #${order.id}</span>
+          <span class="order-status-badge ${statusClass}">${statusLabel}</span>
+        </div>
+        <div style="text-align: right;">
+          <div class="order-total">₫${formatPrice(order.totalAmount)}</div>
+          <div class="order-date">${formatDate(order.orderDate)}</div>
+        </div>
       </div>
-      <div style="margin-top:8px; color:#444;">Tổng: ${formatPrice(order.totalAmount)}₫ • Trạng thái: ${order.status}</div>
-      <div style="margin-top:8px; display:flex; gap:8px; justify-content:flex-end;">
-        ${order.status === 'preparing' ? `<button class="btn" onclick="boActionPrint('${order.id}')">In vận đơn</button><button class="btn" onclick="boActionReject('${order.id}')">Từ chối</button><button class="btn" onclick="boActionMessage('${order.id}')">Nhắn KH</button>` : ''}
-        ${order.status === 'shipping' ? `<button class="btn" onclick="boActionDelivered('${order.id}')">Đã giao</button>` : ''}
+
+      <div class="order-details">
+        <div class="order-meta">
+          <div class="order-meta-item">
+            <span class="meta-label">Ngày đặt:</span>
+            <span class="meta-value">${formatDate(order.orderDate)}</span>
+          </div>
+          <div class="order-meta-item">
+            <span class="meta-label">Người bán:</span>
+            <span class="meta-value">${order.businessName || ''}</span>
+          </div>
+        </div>
+
+        ${items.map(item => `
+          <div class="order-item">
+            <img src="${item.image || ''}" alt="${item.productName || ''}" class="order-item-image">
+            <div class="order-item-info">
+              <div class="order-item-name">${item.productName || ''}</div>
+              <div class="order-item-quantity">Số lượng: ${item.quantity || 0}</div>
+            </div>
+            <div class="order-item-price">₫${formatPrice(item.price || 0)}</div>
+          </div>
+        `).join('')}
+
+      </div>
+
+      <div class="order-actions">
+        <button class="order-action-btn btn-detail" onclick="viewOrderDetail('${order.id}')">Xem chi tiết</button>
+        ${order.trackingNumber ? `<button class="order-action-btn btn-track" onclick="trackOrder('${order.id}')">Theo dõi đơn hàng</button>` : ''}
+        ${order.status === 'delivered' && !order.rating ? `
+          <button class="order-action-btn btn-return" onclick="openReturnModal('${order.id}')">Yêu cầu trả hàng/hoàn tiền</button>
+          <button class="order-action-btn btn-received" onclick="confirmReceived('${order.id}')">Đã nhận được hàng</button>
+        ` : ''}
+        ${order.status === 'completed' && !order.expired ? `
+          <button class="order-action-btn btn-return" onclick="openReturnModal('${order.id}')">Yêu cầu trả hàng/hoàn tiền</button>
+        ` : ''}
       </div>
     </div>
   `;
+}
+
+function boRenderOrder(order) {
+  // Normalize order object to the shape expected by the customer renderer
+  const unified = Object.assign({}, {
+    id: order.id || order.order_id || order.orderId || '',
+    orderDate: order.orderDate || order.order_date || order.createdAt || order.created_at || '',
+    totalAmount: order.totalAmount || order.total_amount || order.total || 0,
+    businessName: order.businessName || order.business_name || order.sellerName || '',
+    items: order.items || order.order_items || [],
+    trackingNumber: order.trackingNumber || order.tracking_number || null,
+    deliveredDate: order.deliveredDate || order.delivered_date || null,
+    rating: order.rating || null,
+    expired: order.expired || false,
+    daysLeftToReview: order.daysLeftToReview || 0,
+    status: (order.status || order.order_status || '').toLowerCase()
+  }, order);
+
+  // Use the local renderer so seller and buyer share the same visual
+  return renderOrderCardLocal(unified);
 }
 
 function boRenderReturnRequest(r) {
@@ -278,12 +453,70 @@ function boRenderReturnRequest(r) {
 }
 
 // Inline actions (wrap businessManager calls)
-function boActionPrint(id) { alert('In vận đơn ' + id); if (businessManager && businessManager.updateOrderStatus) { businessManager.updateOrderStatus(id, 'shipping'); } boLoadOrders(); boUpdateCounts(); }
-function boActionReject(id) { if (confirm('Từ chối đơn ' + id + '?')) { alert('Đã từ chối'); } }
+async function boActionPrint(id) {
+  if (!id) return;
+  alert('In vận đơn ' + id);
+  // Try businessManager first
+  if (typeof businessManager !== 'undefined' && typeof businessManager.updateOrderStatus === 'function') {
+    businessManager.updateOrderStatus(id, 'shipping');
+    boLoadOrders(); boUpdateCounts();
+    return;
+  }
+  // Fallback to server API
+  if (confirm('Đánh dấu đơn là đang vận chuyển?')) {
+    try {
+      const resp = await fetch('http://localhost:3001/api/orders/' + encodeURIComponent(id) + '/status', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'SHIPPING' }) });
+      if (!resp.ok) throw new Error('update failed');
+      boLoadOrders(); boUpdateCounts();
+    } catch (e) { console.warn('boActionPrint failed', e); alert('Không thể cập nhật trạng thái trên server'); }
+  }
+}
+
+async function boActionReject(id) {
+  if (!id) return;
+  if (!confirm('Từ chối đơn ' + id + '?')) return;
+  // If no server reject endpoint, just notify
+  if (typeof businessManager !== 'undefined' && typeof businessManager.updateOrderStatus === 'function') {
+    businessManager.updateOrderStatus(id, 'cancelled');
+    boLoadOrders(); boUpdateCounts();
+    alert('Đã từ chối');
+    return;
+  }
+  alert('Từ chối (chỉ thông báo giao diện) — chức năng server chưa được cấu hình');
+}
+
 function boActionMessage(id) { alert('Nhắn tin KH ' + id); }
-function boActionDelivered(id) { if (confirm('Xác nhận đã giao ' + id + '?')) { if (businessManager && businessManager.updateOrderStatus) businessManager.updateOrderStatus(id, 'delivered'); boLoadOrders(); boUpdateCounts(); } }
-function boActionApproveReturn(id) { if (businessManager && businessManager.updateReturnRequestStatus) businessManager.updateReturnRequestStatus(id, 'approved'); boLoadOrders(); boUpdateCounts(); }
-function boActionRejectReturn(id) { if (businessManager && businessManager.updateReturnRequestStatus) businessManager.updateReturnRequestStatus(id, 'rejected'); boLoadOrders(); boUpdateCounts(); }
+
+async function boActionDelivered(id) {
+  if (!id) return;
+  if (!confirm('Xác nhận đã giao ' + id + '?')) return;
+  if (typeof businessManager !== 'undefined' && typeof businessManager.updateOrderStatus === 'function') {
+    businessManager.updateOrderStatus(id, 'delivered');
+    boLoadOrders(); boUpdateCounts();
+    return;
+  }
+  try {
+    const resp = await fetch('http://localhost:3001/api/orders/' + encodeURIComponent(id) + '/status', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'DELIVERED' }) });
+    if (!resp.ok) throw new Error('update failed');
+    boLoadOrders(); boUpdateCounts();
+  } catch (e) { console.warn('boActionDelivered failed', e); alert('Không thể cập nhật trạng thái trên server'); }
+}
+
+async function boActionApproveReturn(id) {
+  if (!id) return;
+  if (typeof businessManager !== 'undefined' && typeof businessManager.updateReturnRequestStatus === 'function') {
+    businessManager.updateReturnRequestStatus(id, 'approved'); boLoadOrders(); boUpdateCounts(); return;
+  }
+  alert('Xử lý trả hàng trên server chưa được cấu hình');
+}
+
+async function boActionRejectReturn(id) {
+  if (!id) return;
+  if (typeof businessManager !== 'undefined' && typeof businessManager.updateReturnRequestStatus === 'function') {
+    businessManager.updateReturnRequestStatus(id, 'rejected'); boLoadOrders(); boUpdateCounts(); return;
+  }
+  alert('Xử lý trả hàng trên server chưa được cấu hình');
+}
 
 // Fetch and render orders for current user
 async function loadOrders() {
@@ -291,11 +524,53 @@ async function loadOrders() {
   if (!container) return;
   container.innerHTML = '<div style="padding:24px; text-align:center; color:#666;">Đang tải...</div>';
 
+  // If an in-memory businessManager exists and the user is a customer, use it for local rendering
   try {
-    // If user is enterprise, load enterprise orders; otherwise load customer orders
-  let url = 'http://localhost:3001/api/orders';
+    const hasBM = (typeof businessManager !== 'undefined');
+    const hasGetByCustomer = hasBM && typeof businessManager.getOrdersByCustomer === 'function';
+    if (hasGetByCustomer && !isEnterpriseUser(currentUser)) {
+      try {
+        let orders = businessManager.getOrdersByCustomer(getUserId(currentUser) || currentUser.id);
+
+        // Filter by status
+        if (currentStatus && currentStatus !== 'all') {
+          orders = orders.filter(order => order.status === currentStatus);
+        }
+
+        // Filter by search term
+        const searchTerm = document.getElementById('orderSearch')?.value.toLowerCase().trim();
+        if (searchTerm) {
+          orders = orders.filter(order => {
+            return (String(order.id || '').toLowerCase().includes(searchTerm) ||
+              String(order.businessName || '').toLowerCase().includes(searchTerm) ||
+              (order.items || []).some(item => String(item.productName || '').toLowerCase().includes(searchTerm)));
+          });
+        }
+
+        // Sort by date
+        orders.sort((a, b) => new Date(b.createdAt || b.orderDate || 0) - new Date(a.createdAt || a.orderDate || 0));
+
+        if (orders.length === 0) {
+          container.innerHTML = `
+            <div class="empty-state">
+              <p class="empty-state-text">${searchTerm ? 'Không tìm thấy đơn hàng nào' : 'Không có đơn hàng nào'}</p>
+            </div>
+          `;
+          return;
+        }
+
+        container.innerHTML = orders.map(o => renderOrderCardLocal(o)).join('');
+        return;
+      } catch (e) {
+        console.warn('local loadOrders failed, falling back to server', e);
+        // fall through to server fetch below
+      }
+    }
+
+    // Server-backed fetch (enterprise or fallback)
+    let url = 'http://localhost:3001/api/orders';
     if (isEnterpriseUser(currentUser)) {
-        url += '?enterpriseId=' + encodeURIComponent(getUserId(currentUser));
+      url += '?enterpriseId=' + encodeURIComponent(getUserId(currentUser));
     } else {
       url += '?customerId=' + encodeURIComponent(getUserId(currentUser));
     }
@@ -306,18 +581,44 @@ async function loadOrders() {
       return;
     }
     const body = await resp.json();
-    const orders = body.orders || [];
+    let orders = body.orders || [];
+
+    // Filter by currentStatus (supporting various server status tokens)
+    function statusMatches(orderStatus, filter) {
+      if (!filter || filter === 'all') return true;
+      const s = canonicalStatus(orderStatus || '');
+      const f = canonicalStatus(filter || '');
+      return s === f;
+    }
+
+    if (currentStatus && currentStatus !== 'all') {
+      orders = orders.filter(o => statusMatches(o.status || o.order_status || o.orderStatus, currentStatus));
+    }
+
+    // Filter by search term
+    const searchTerm = document.getElementById('orderSearch')?.value.toLowerCase().trim();
+    if (searchTerm) {
+      orders = orders.filter(o => {
+        const id = String(o.order_id || o.id || o.orderId || '').toLowerCase();
+        const addr = String(o.shipping_address || o.customer_address || o.customerAddress || '').toLowerCase();
+        const business = String(o.business_name || o.businessName || '').toLowerCase();
+        const items = (o.items || []).some(it => String(it.product_name || it.productName || '').toLowerCase().includes(searchTerm));
+        return id.includes(searchTerm) || addr.includes(searchTerm) || business.includes(searchTerm) || items;
+      });
+    }
+
     if (orders.length === 0) {
       container.innerHTML = '<div style="padding:24px; text-align:center; color:#666;">Không có đơn hàng</div>';
       return;
     }
 
+    // Normalize and render with the unified local renderer for consistent visuals
     let html = '';
     orders.forEach(o => {
-      html += renderOrderCard(o);
+      html += renderOrderCardLocal(normalizeServerOrder(o));
     });
     container.innerHTML = html;
-    // attach handlers
+    // Attach handlers for dynamic elements (if any)
     document.querySelectorAll('.btn-view-order').forEach(btn => btn.addEventListener('click', onViewOrder));
     document.querySelectorAll('.btn-change-status').forEach(btn => btn.addEventListener('click', onChangeStatus));
     document.querySelectorAll('.btn-mark-received').forEach(btn => btn.addEventListener('click', onMarkReceived));
@@ -660,3 +961,58 @@ function handleLogout() {
     window.location.href = '../home/index.html';
   }
 }
+
+// Debug overlay to inspect which code path / resources are used at runtime
+function showOrderDebugInfo() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    if (!params.get('debugOrders')) return; // only show when ?debugOrders=1 is present
+
+    const info = {
+      href: window.location.href,
+      role: normalizedRole(currentUser),
+      isEnterprise: !!isEnterpriseUser(currentUser),
+      userId: getUserId(currentUser) || (currentUser && (currentUser.id || currentUser.user_id)) || null,
+      hasBusinessManager: typeof businessManager !== 'undefined',
+      bm_getOrdersByStatus: (typeof businessManager !== 'undefined' && typeof businessManager.getOrdersByStatus === 'function'),
+      bm_getOrdersByCustomer: (typeof businessManager !== 'undefined' && typeof businessManager.getOrdersByCustomer === 'function'),
+      renderer_local: typeof renderOrderCardLocal === 'function',
+      renderer_server: typeof renderOrderCard === 'function',
+      cssFiles: Array.from(document.querySelectorAll('link[rel="stylesheet"]').values ? document.querySelectorAll('link[rel="stylesheet"]') : document.querySelectorAll('link[rel="stylesheet"]')).map(l => l.href)
+    };
+
+    const panel = document.createElement('div');
+    panel.id = 'orderDebugPanel';
+    panel.style.position = 'fixed';
+    panel.style.right = '12px';
+    panel.style.top = '12px';
+    panel.style.zIndex = 99999;
+    panel.style.background = 'rgba(255,255,255,0.95)';
+    panel.style.border = '1px solid rgba(0,0,0,0.08)';
+    panel.style.boxShadow = '0 6px 18px rgba(0,0,0,0.06)';
+    panel.style.padding = '8px 10px';
+    panel.style.fontSize = '12px';
+    panel.style.color = '#111';
+    panel.style.borderRadius = '6px';
+    panel.style.maxWidth = '360px';
+    panel.style.fontFamily = 'Inter, Arial, sans-serif';
+
+    panel.innerHTML = `
+      <div style="font-weight:700; margin-bottom:6px; color:#166534;">Order Debug</div>
+      <div><strong>role:</strong> ${info.role}</div>
+      <div><strong>enterprise:</strong> ${info.isEnterprise}</div>
+      <div><strong>userId:</strong> ${info.userId}</div>
+      <div><strong>businessManager:</strong> ${info.hasBusinessManager}</div>
+      <div style="margin-top:6px;"><strong>bm.getOrdersByStatus:</strong> ${info.bm_getOrdersByStatus} • <strong>bm.getOrdersByCustomer:</strong> ${info.bm_getOrdersByCustomer}</div>
+      <div style="margin-top:6px;"><strong>renderer_local:</strong> ${info.renderer_local} • <strong>renderer_server:</strong> ${info.renderer_server}</div>
+      <details style="margin-top:6px; font-size:11px;"><summary>CSS files (${info.cssFiles.length})</summary><div style="max-height:160px; overflow:auto; padding-top:6px;">${info.cssFiles.map(h=>`<div style=\"word-break:break-all;\">${h}</div>`).join('')}</div></details>
+      <div style="text-align:right; margin-top:8px;"><button id="orderDebugClose" style="background:#22C55E; color:#fff; border:none; padding:6px 8px; border-radius:4px; cursor:pointer;">Close</button></div>
+    `;
+
+    document.body.appendChild(panel);
+    document.getElementById('orderDebugClose').addEventListener('click', () => panel.remove());
+  } catch (e) { console.warn('showOrderDebugInfo failed', e); }
+}
+
+// Run debug overlay if requested
+try { showOrderDebugInfo(); } catch (e) {}

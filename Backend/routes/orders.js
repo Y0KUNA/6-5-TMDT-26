@@ -47,30 +47,63 @@ router.get('/', async (req, res) => {
     const qEnterprise = parseInt(req.query.enterpriseId, 10) || null;
     const qStatus = req.query.status || null;
 
-    let sql = 'SELECT * FROM orders';
+    // Enrich orders with enterprise (seller) name and items array for frontend convenience
+    // Build base query with joins and aggregate items as JSON
+    let sql = `
+      SELECT
+        o.*, 
+        e.business_name,
+        COALESCE(json_agg(json_build_object(
+          'order_item_id', oi.order_item_id,
+          'product_id', oi.product_id,
+          'product_name', oi.product_name,
+          'unit', oi.unit,
+          'quantity', oi.quantity,
+          'unit_price', oi.unit_price,
+          'subtotal', oi.subtotal,
+          'image', pi.image_url
+        )) FILTER (WHERE oi.order_item_id IS NOT NULL), '[]') AS items
+      FROM orders o
+      LEFT JOIN enterprises e ON e.enterprise_id = o.enterprise_id
+      LEFT JOIN order_items oi ON oi.order_id = o.order_id
+      LEFT JOIN product_images pi ON pi.product_id = oi.product_id AND pi.is_primary = true
+    `;
+
     const where = [];
     const vals = [];
 
     if (role === 'customer' || qCustomer) {
-      where.push('customer_id = $' + (vals.length + 1));
+      where.push('o.customer_id = $' + (vals.length + 1));
       vals.push(qCustomer || userId);
     }
 
     if (role === 'enterprise' || qEnterprise) {
-      where.push('enterprise_id = $' + (vals.length + 1));
+      where.push('o.enterprise_id = $' + (vals.length + 1));
       vals.push(qEnterprise || userId);
     }
 
     if (qStatus) {
-      where.push('status = $' + (vals.length + 1));
+      where.push('o.status = $' + (vals.length + 1));
       vals.push(qStatus);
     }
 
     if (where.length > 0) sql += ' WHERE ' + where.join(' AND ');
-    sql += ' ORDER BY created_at DESC';
+    sql += ' GROUP BY o.order_id, e.business_name ORDER BY o.created_at DESC';
 
     const r = await db.query(sql, vals);
-    return res.json({ orders: r.rows });
+    // Prefix relative image paths with server origin so frontend can load them directly
+    const origin = req.protocol + '://' + req.get('host');
+    const rows = r.rows.map(row => {
+      const items = Array.isArray(row.items) ? row.items.map(it => {
+        let image = it.image || null;
+        if (image && !/^https?:\/\//i.test(image)) {
+          image = origin + '/' + String(image).replace(/^\/+/, '');
+        }
+        return Object.assign({}, it, { image });
+      }) : [];
+      return Object.assign({}, row, { items });
+    });
+    return res.json({ orders: rows });
   } catch (err) {
     console.error('GET /api/orders error', err);
     return res.status(500).json({ error: 'Internal server error' });
@@ -85,8 +118,18 @@ router.get('/:id', async (req, res) => {
     const orderR = await db.query('SELECT * FROM orders WHERE order_id = $1', [id]);
     if (orderR.rowCount === 0) return res.status(404).json({ error: 'Order not found' });
     const order = orderR.rows[0];
-    const itemsR = await db.query('SELECT * FROM order_items WHERE order_id = $1', [id]);
-    return res.json({ order, items: itemsR.rows });
+    const itemsR = await db.query('SELECT oi.*, pi.image_url as image FROM order_items oi LEFT JOIN product_images pi ON pi.product_id = oi.product_id AND pi.is_primary = true WHERE oi.order_id = $1', [id]);
+    // prefix image URLs
+    const origin = req.protocol + '://' + req.get('host');
+    const items = itemsR.rows.map(it => {
+      let image = it.image || null;
+      if (image && !/^https?:\/\//i.test(image)) image = origin + '/' + String(image).replace(/^\/+/, '');
+      return Object.assign({}, it, { image });
+    });
+    // also include business name for convenience
+    const entR = await db.query('SELECT business_name FROM enterprises WHERE enterprise_id = $1', [order.enterprise_id]);
+    const business_name = entR.rowCount ? entR.rows[0].business_name : null;
+    return res.json({ order: Object.assign({}, order, { business_name }), items });
   } catch (err) {
     console.error('GET /api/orders/:id error', err);
     return res.status(500).json({ error: 'Internal server error' });

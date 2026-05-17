@@ -67,9 +67,28 @@
 
       <!-- Business Orders Tab (Hidden by default) -->
       <div id="business-orders-tab" class="tab-content">
-        <p class="text-center" style="padding: 48px; color: #666;">
-          Vui lòng <a href="../business-orders/business-orders.html" style="color: #22C55E;">đăng nhập với tài khoản doanh nghiệp</a> để xem trang này.
-        </p>
+        <div class="business-inline-root" style="padding:12px 0;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <h2 style="margin:0; font-size:20px; color:#111;">Quản Lý Đơn Hàng</h2>
+              <div style="color:#666; font-size:13px; margin-top:6px;">Tài khoản: <strong id="bo-account-name">-</strong></div>
+            </div>
+            <div style="display:flex; gap:12px; align-items:center;">
+              <button id="bo-refresh" class="btn" style="padding:8px 12px; border-radius:6px; background:#F5F5F5; border:1px solid #E5E7EB;">⟳ Làm mới</button>
+            </div>
+          </div>
+
+          <div style="margin-top:12px; display:flex; gap:16px; align-items:center; font-size:14px; color:#444;">
+            <div>Chờ xử lý (<span id="bo-pendingCount">0</span>)</div>
+            <div>Đang vận chuyển (<span id="bo-shippingCount">0</span>)</div>
+            <div>Đã giao hàng (<span id="bo-deliveredCount">0</span>)</div>
+            <div>Yêu cầu trả hàng (<span id="bo-returnCount">0</span>)</div>
+          </div>
+
+          <div id="bo-ordersList" style="margin-top:18px;">
+            <div class="empty-state" style="padding:36px; text-align:center; color:#666;">Không có đơn hàng nào</div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
