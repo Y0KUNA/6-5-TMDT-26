@@ -10,7 +10,7 @@ document.getElementById('loginForm')?.addEventListener('submit', async function 
 
   // Try server-side login first
   try {
-    const resp = await fetch('http://localhost:3001/api/auth/login', {
+  const resp = await fetch('http://localhost:3001/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })
@@ -50,12 +50,11 @@ document.getElementById('loginForm')?.addEventListener('submit', async function 
 
   if (user) {
     alert(`Đăng nhập thành công! Chào mừng ${user.fullName}`);
-    if (user.role === 'admin') {
+    const role = (user.role || '').toLowerCase();
+    if (role === 'admin') {
       window.location.href = '../admin-approval/admin-approval.html';
-    } else if (user.role === 'enterprise') {
+    } else if (role === 'enterprise' || role === 'vendor' || role === 'business') {
       window.location.href = '../product-management/product-management.html';
-    } else if (user.role === 'enterprise') {
-      window.location.href = '../business-orders/business-orders.html';
     } else {
       window.location.href = '../home/index.html';
     }

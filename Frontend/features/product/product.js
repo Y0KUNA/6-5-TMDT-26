@@ -23,12 +23,15 @@ async function renderProductDetails() {
 
     currentProduct = {
       id: p.id || p.product_id,
+      enterpriseId: p.enterpriseId || p.enterprise_id,
+      enterpriseName: p.enterpriseName || p.enterprise_name || p.businessName || p.business_name,
       name: p.name,
       description: p.description,
       images: Array.isArray(p.images) ? p.images : (p.images ? [p.images] : []),
       units: (p.units && p.units.length) ? p.units : (typeof p.price === 'number' ? [{ name: p.unit || 'kg', price: p.price }] : []),
       certificate: p.certificate || p.certification,
-      rating: p.rating || 0
+      rating: p.rating || 0,
+      stock: p.stockQuantity || p.stock_quantity || 0
     };
   } catch (err) {
     try { currentProduct = dataManager.getProductById(productId); } catch (e) { currentProduct = null; }
@@ -104,28 +107,46 @@ async function confirmAddToCart() {
   if (!currentUser) { alert('Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng'); window.location.href = '../login/login.html'; return; }
   const qEl = document.getElementById('quantity'); quantity = parseInt(qEl?.value) || 1;
   const productId = currentProduct.id || currentProduct.product_id;
+  if (currentProduct.stock && quantity > Number(currentProduct.stock)) {
+    alert('Chỉ còn ' + currentProduct.stock + ' sản phẩm trong kho');
+    return;
+  }
 
   // If we have a server token, try adding to server-side cart
   const token = localStorage.getItem('authToken');
   const unitObj = (currentProduct.units && currentProduct.units[selectedUnit]) ? currentProduct.units[selectedUnit] : { name: currentProduct.unit || 'kg', price: currentProduct.price || 0 };
   if (token) {
     try {
-      const resp = await fetch('http://localhost:3001/api/cart/items', {
+  const resp = await fetch('http://localhost:3001/api/cart/items', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-        body: JSON.stringify({ productId: productId, unit: unitObj.name, unitPrice: unitObj.price, quantity })
+        body: JSON.stringify({
+          productId: productId,
+          enterpriseId: currentProduct.enterpriseId || currentProduct.enterprise_id || currentProduct.vendorId || currentProduct.vendor_id,
+          unit: unitObj.name,
+          unitPrice: unitObj.price,
+          quantity
+        })
       });
-      if (!resp.ok) throw new Error('Failed to add to cart');
+      if (!resp.ok) {
+        const body = await resp.json().catch(() => ({}));
+        throw new Error(body.error || 'Không thể thêm vào giỏ, vui lòng thử lại');
+      }
       alert('Đã thêm sản phẩm vào giỏ hàng');
       closeAddToCartModal();
       return;
     } catch (err) {
-      console.warn('Server add to cart failed, falling back to client cart', err);
+      console.warn('Server add to cart failed', err);
+      alert(err.message || 'Không thể thêm vào giỏ, vui lòng thử lại');
+      return;
     }
   }
 
   // Fallback: client-side cart
-  dataManager.addToCart(productId, selectedUnit, quantity);
+  dataManager.addToCart(productId, selectedUnit, quantity, {
+    enterpriseId: currentProduct.enterpriseId || currentProduct.enterprise_id || currentProduct.vendorId || currentProduct.vendor_id,
+    enterpriseName: currentProduct.enterpriseName || currentProduct.enterprise_name || currentProduct.businessName || currentProduct.business_name
+  });
   alert('Đã thêm sản phẩm vào giỏ hàng'); closeAddToCartModal();
 }
 

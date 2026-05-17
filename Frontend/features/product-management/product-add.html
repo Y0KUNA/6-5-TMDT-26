@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="../../css/style.css">
 </head>
 <body>
+  <div id="siteHeader"></div>
   <div class="container mt-32" style="padding-bottom: 48px;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px;">
       <h1 style="color: #000; font-size: 24px; font-weight: 700;">Quản Lý Sản Phẩm</h1>
@@ -101,7 +102,9 @@
     </div>
   </div>
 
-  <script src="../shared/data.js"></script>
+  <script src="../../js/data.js"></script>
+  <script src="../../js/data-business.js"></script>
+  <script src="../shared/frontend-env.js"></script>
   <script>
     // Moved inline scripts with login redirect updates
     document.addEventListener('DOMContentLoaded', function() {
@@ -113,7 +116,7 @@
         return;
       }
       
-      if (currentUser.role !== 'vendor' && currentUser.role !== 'business') {
+      if (currentUser.role !== 'vendor' && currentUser.role !== 'business' && currentUser.role !== 'enterprise') {
         alert('Bạn không có quyền truy cập trang này');
         window.location.href = '../home/index.html';
         return;
@@ -121,22 +124,75 @@
     });
 
     let unitCount = 1;
+    let uploadedImages = [];
+    let certificateFile = null;
 
     document.getElementById('productImages').addEventListener('change', function(e) {
       const files = Array.from(e.target.files);
       const preview = document.getElementById('imagePreview');
-      preview.innerHTML = files.map((file, index) => `
-        <div style="position: relative; width: 100px; height: 100px;">
-          <img src="${URL.createObjectURL(file)}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px; border: 1px solid #E5E7EB;">
-          <button type="button" onclick="removeImage(${index})" style="position: absolute; top: 4px; right: 4px; background: #EF4444; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer;">×</button>
+      
+      // Process each file
+      files.forEach((file, index) => {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+          const base64String = event.target.result;
+          uploadedImages.push({
+            file: file,
+            base64: base64String,
+            name: file.name
+          });
+          renderImagePreview();
+        };
+        reader.readAsDataURL(file);
+      });
+    });
+
+    function renderImagePreview() {
+      const preview = document.getElementById('imagePreview');
+      preview.innerHTML = uploadedImages.map((img, index) => `
+        <div style="position: relative; width: 120px; height: 120px; border-radius: 8px; overflow: hidden; border: 2px solid #E5E7EB; background: #F9FAFB;">
+          <img src="${img.base64}" style="width: 100%; height: 100%; object-fit: cover;">
+          <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); opacity: 0; transition: opacity 0.3s; display: flex; align-items: center; justify-content: center;" class="image-overlay">
+            <button type="button" onclick="removeImage(${index})" style="background: #EF4444; color: white; border: none; border-radius: 4px; padding: 8px 12px; cursor: pointer; font-size: 14px; font-weight: 600;">
+              🗑️ Xóa
+            </button>
+          </div>
+          <div style="position: absolute; top: 4px; right: 4px; background: #22C55E; color: white; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600;">
+            ${index + 1}
+          </div>
         </div>
       `).join('');
-    });
+      
+      // Add hover effect
+      document.querySelectorAll('.image-overlay').forEach(overlay => {
+        overlay.parentElement.addEventListener('mouseenter', function() {
+          overlay.style.opacity = '1';
+        });
+        overlay.parentElement.addEventListener('mouseleave', function() {
+          overlay.style.opacity = '0';
+        });
+      });
+    }
+
+    function removeImage(index) {
+      uploadedImages.splice(index, 1);
+      renderImagePreview();
+    }
 
     document.getElementById('certificate').addEventListener('change', function(e) {
       const file = e.target.files[0];
       if (file) {
-        document.getElementById('certificatePreview').textContent = `Đã chọn: ${file.name}`;
+        const reader = new FileReader();
+        reader.onload = function(event) {
+          certificateFile = {
+            file: file,
+            base64: event.target.result,
+            name: file.name
+          };
+          const preview = document.getElementById('certificatePreview');
+          preview.innerHTML = `<span style="color: #16A34A; font-weight: 500;">✓ Đã chọn: ${file.name}</span>`;
+        };
+        reader.readAsDataURL(file);
       }
     });
 
@@ -198,6 +254,11 @@
         alert('Vui lòng thêm ít nhất một đơn vị bán');
         return;
       }
+
+      if (uploadedImages.length === 0) {
+        alert('Vui lòng thêm ít nhất một hình ảnh sản phẩm');
+        return;
+      }
       
       let vendorId = null;
       if (currentUser.role === 'vendor') {
@@ -225,13 +286,13 @@
         description: productDescription,
         categoryId: 1,
         vendorId: vendorId,
-        images: ['https://via.placeholder.com/176x176/22C55E/FFFFFF?text=' + encodeURIComponent(productName)],
+        images: uploadedImages.map(img => img.base64),
         units: units,
         stock: 100,
         sold: 0,
         rating: 0,
         reviews: 0,
-        certificate: 'https://via.placeholder.com/400x300/22C55E/FFFFFF?text=Chứng+Nhận+An+Toàn',
+        certificate: certificateFile ? certificateFile.base64 : 'https://via.placeholder.com/400x300/22C55E/FFFFFF?text=Chứng+Nhận+An+Toàn',
         featured: false,
         flashSale: false,
         discount: 0,
@@ -240,8 +301,15 @@
       
       dataManager.addProduct(productData);
       alert('Sản phẩm đã được lưu thành công!');
+      // Reset form
+      uploadedImages = [];
+      certificateFile = null;
+      document.getElementById('addProductForm').reset();
+      document.getElementById('imagePreview').innerHTML = '';
+      document.getElementById('certificatePreview').innerHTML = '';
       window.location.href = '../product-management/product-management.html';
     });
   </script>
+  <script src="./product-add-upload.js"></script>
 </body>
 </html>

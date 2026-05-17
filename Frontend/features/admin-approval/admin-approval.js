@@ -2,56 +2,46 @@
 
 let currentVendorId = null;
 let currentPromotionId = null;
+const PRODUCTS_API_BASE = 'http://localhost:3001/api/products';
+let lastVendorsRaw = null;
 
+// Determine vendors API base in a defensive way:
+// Priority: explicit global VENDORS_API_URL_BASE -> APP_CONFIG.API_BASE_URL -> empty string (use relative paths)
+const VENDORS_API_BASE = (window.VENDORS_API_URL_BASE || (window.APP_CONFIG && window.APP_CONFIG.API_BASE_URL) || '').replace(/\/$/, '');
 // Sample vendor data for demo
-const sampleVendors = [
-  {
-    id: 1,
-    fullName: 'Nguyễn Văn A',
-    businessName: 'Nông Trại Xanh Organic',
-    businessAddress: '123 Đường Lê Lợi, Quận 1, TP.HCM',
-    businessPhone: '0901234567',
-    status: 'pending',
-    licenseImage: 'https://via.placeholder.com/522x200/22C55E/FFFFFF?text=Giay+Phep+Kinh+Doanh'
-  },
-  {
-    id: 2,
-    fullName: 'Trần Thị B',
-    businessName: 'Cửa Hàng Rau Sạch Miền Tây',
-    businessAddress: '456 Đường Nguyễn Văn Cừ, Quận 5, TP.HCM',
-    businessPhone: '0912345678',
-    status: 'pending',
-    licenseImage: 'https://via.placeholder.com/522x200/22C55E/FFFFFF?text=Giay+Phep+Kinh+Doanh'
-  },
-  {
-    id: 3,
-    fullName: 'Lê Văn C',
-    businessName: 'Trang Trại Hữu Cơ Đà Lạt',
-    businessAddress: '789 Đường Trần Hưng Đạo, Đà Lạt, Lâm Đồng',
-    businessPhone: '0923456789',
-    status: 'pending',
-    licenseImage: 'https://via.placeholder.com/522x200/22C55E/FFFFFF?text=Giay+Phep+Kinh+Doanh'
-  }
-];
 
 // Load vendors from localStorage or use sample data
 async function loadVendors() {
   // Try to fetch pending vendors from server API
   try {
-    const resp = await fetch(window.VENDORS_API_URL || '/api/vendors/pending');
+    // use explicit VENDORS_API_BASE if provided, else fall back to relative path
+    const listUrl = VENDORS_API_BASE ? (VENDORS_API_BASE + '/api/vendors/pending') : 'http://localhost:3001/api/vendors/pending';
+    const resp = await fetch(listUrl);
     if (resp.ok) {
       const body = await resp.json();
-      if (Array.isArray(body.vendors)) {
-        return body.vendors.map(v => ({
-          id: v.enterprise_id || v.enterpriseid || v.id,
-          profileId: v.profile_id,
-          fullName: v.full_name,
-          businessName: v.business_name,
-          businessAddress: v.address,
-          businessPhone: v.phone,
-          status: v.status,
-          licenseImage: v.license_file
-        })).filter(x => x.status === 'PENDING' || x.status === 'pending');
+      lastVendorsRaw = body;
+      console.debug && console.debug('loadVendors response body:', body);
+      // Accept several possible shapes from backend:
+      // 1) Array at top-level: [ { ... }, ... ]
+      // 2) { vendors: [ ... ] }
+      // 3) { data: { vendors: [ ... ] } }
+      let vendorsArr = null;
+      if (Array.isArray(body)) vendorsArr = body;
+      else if (Array.isArray(body.vendors)) vendorsArr = body.vendors;
+      else if (body.data && Array.isArray(body.data.vendors)) vendorsArr = body.data.vendors;
+
+      if (Array.isArray(vendorsArr)) {
+        const mapped = vendorsArr.map(v => ({
+          id: v.enterprise_id || v.enterpriseid || v.id || v.user_id,
+          profileId: v.profile_id || v.profileId,
+          fullName: v.full_name || v.fullName || v.name || v.business_name || v.businessName,
+          businessName: v.business_name || v.businessName || v.full_name || v.name,
+          businessAddress: v.address || v.business_address || v.businessAddress,
+          businessPhone: v.phone || v.business_phone || v.businessPhone,
+          status: (v.status || v.profile_status || v.profileStatus || '').toString(),
+          licenseImage: v.license_file || v.licenseFile
+        })).filter(x => (x.status || '').toLowerCase() === 'pending');
+        return mapped;
       }
     }
   } catch (err) {
@@ -74,8 +64,20 @@ async function renderVendors() {
   const emptyState = document.getElementById('emptyState');
   
   if (vendors.length === 0) {
+    // If API returned something but mapping/filtering produced no vendors,
+    // show a debug view so developer can see raw response.
     vendorList.innerHTML = '';
     emptyState.style.display = 'block';
+    if (lastVendorsRaw) {
+      const pre = document.createElement('pre');
+      pre.style.textAlign = 'left';
+      pre.style.background = '#f8fafc';
+      pre.style.padding = '12px';
+      pre.style.borderRadius = '6px';
+      pre.textContent = JSON.stringify(lastVendorsRaw, null, 2);
+      vendorList.appendChild(document.createElement('div'));
+      vendorList.appendChild(pre);
+    }
     return;
   }
   
@@ -106,7 +108,7 @@ async function renderVendors() {
         </div>
         <div>
           <div class="info-label" style="margin-bottom: 12px;">Giấy phép kinh doanh:</div>
-          <img src="${vendor.licenseImage}" class="license-image" alt="Giấy phép kinh doanh">
+          <img src="http://localhost:3001${vendor.licenseImage}" class="license-image" alt="Giấy phép kinh doanh">
         </div>
       </div>
     </div>
@@ -117,7 +119,8 @@ async function renderVendors() {
 async function approveVendor(vendorId) {
   if (!confirm('Bạn có chắc chắn muốn phê duyệt đơn đăng ký này?')) return;
   try {
-    const resp = await fetch((window.VENDORS_API_URL_BASE || '') + `/api/vendors/${vendorId}/approve`, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+  const approveUrl = VENDORS_API_BASE ? (VENDORS_API_BASE + `/api/vendors/${vendorId}/approve`) : `http://localhost:3001/api/vendors/${vendorId}/approve`;
+  const resp = await fetch(approveUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
     if (resp.ok) {
       alert('Đã phê duyệt đơn đăng ký');
       await renderVendors();
@@ -156,7 +159,8 @@ function confirmReject() {
   // call API to reject
   (async () => {
     try {
-      const resp = await fetch((window.VENDORS_API_URL_BASE || '') + `/api/vendors/${currentVendorId}/reject`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reason }) });
+  const rejectUrl = VENDORS_API_BASE ? (VENDORS_API_BASE + `/api/vendors/${currentVendorId}/reject`) : `/api/vendors/${currentVendorId}/reject`;
+  const resp = await fetch(rejectUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reason }) });
       if (resp.ok) {
         alert('Đã từ chối đơn đăng ký');
         closeRejectModal();
@@ -182,30 +186,143 @@ document.getElementById('rejectModal')?.addEventListener('click', function(e) {
 // Show approval tab
 function showApprovalTab(tabName) {
   const vendorsTab = document.getElementById('vendorsTab');
+  const productsTab = document.getElementById('productsTab');
   const discountsTab = document.getElementById('discountsTab');
   const vendorsTabBtn = document.getElementById('vendorsTabBtn');
+  const productsTabBtn = document.getElementById('productsTabBtn');
   const discountsTabBtn = document.getElementById('discountsTabBtn');
 
   if (tabName === 'vendors') {
     vendorsTab.style.display = 'block';
+    productsTab.style.display = 'none';
     discountsTab.style.display = 'none';
     vendorsTabBtn.style.borderBottom = '3px solid #22C55E';
     vendorsTabBtn.style.color = '#22C55E';
     vendorsTabBtn.style.fontWeight = '600';
+    productsTabBtn.style.borderBottom = '3px solid transparent';
+    productsTabBtn.style.color = '#666';
+    productsTabBtn.style.fontWeight = '400';
     discountsTabBtn.style.borderBottom = '3px solid transparent';
     discountsTabBtn.style.color = '#666';
     discountsTabBtn.style.fontWeight = '400';
     renderVendors();
+  } else if (tabName === 'products') {
+    vendorsTab.style.display = 'none';
+    productsTab.style.display = 'block';
+    discountsTab.style.display = 'none';
+    vendorsTabBtn.style.borderBottom = '3px solid transparent';
+    vendorsTabBtn.style.color = '#666';
+    vendorsTabBtn.style.fontWeight = '400';
+    productsTabBtn.style.borderBottom = '3px solid #22C55E';
+    productsTabBtn.style.color = '#22C55E';
+    productsTabBtn.style.fontWeight = '600';
+    discountsTabBtn.style.borderBottom = '3px solid transparent';
+    discountsTabBtn.style.color = '#666';
+    discountsTabBtn.style.fontWeight = '400';
+    renderPendingProducts();
   } else if (tabName === 'discounts') {
     vendorsTab.style.display = 'none';
+    productsTab.style.display = 'none';
     discountsTab.style.display = 'block';
     vendorsTabBtn.style.borderBottom = '3px solid transparent';
     vendorsTabBtn.style.color = '#666';
     vendorsTabBtn.style.fontWeight = '400';
+    productsTabBtn.style.borderBottom = '3px solid transparent';
+    productsTabBtn.style.color = '#666';
+    productsTabBtn.style.fontWeight = '400';
     discountsTabBtn.style.borderBottom = '3px solid #22C55E';
     discountsTabBtn.style.color = '#22C55E';
     discountsTabBtn.style.fontWeight = '600';
     renderPromotions();
+  }
+}
+
+async function loadPendingProducts() {
+  const resp = await fetch(PRODUCTS_API_BASE + '/pending');
+  if (!resp.ok) {
+    const body = await resp.json().catch(() => ({}));
+    throw new Error(body.error || 'Không tải được danh sách sản phẩm chờ duyệt');
+  }
+  const body = await resp.json();
+  return Array.isArray(body.products) ? body.products : [];
+}
+
+async function renderPendingProducts() {
+  const container = document.getElementById('productApprovalList');
+  const emptyState = document.getElementById('emptyProductState');
+  if (!container || !emptyState) return;
+
+  try {
+    const products = await loadPendingProducts();
+    if (!products.length) {
+      container.innerHTML = '';
+      emptyState.style.display = 'block';
+      return;
+    }
+
+    emptyState.style.display = 'none';
+    container.innerHTML = products.map((p) => `
+      <div class="vendor-card" style="margin-bottom: 24px;">
+        <div style="display: grid; grid-template-columns: 120px 1fr; gap: 16px;">
+          <img src="${p.primary_image || 'https://via.placeholder.com/120x120?text=No+Image'}" style="width: 120px; height: 120px; object-fit: cover; border-radius: 8px;" alt="product image">
+          <div>
+            <h3 class="vendor-name" style="margin-bottom: 8px;">${p.name || ''}</h3>
+            <div class="vendor-info">
+              <div><span class="info-label">Người bán:</span><span class="info-value" style="margin-left: 8px;">${p.business_name || ('Enterprise #' + p.enterprise_id)}</span></div>
+              <div><span class="info-label">Giá:</span><span class="info-value" style="margin-left: 8px;">${Number(p.price || 0).toLocaleString('vi-VN')} VND / ${p.unit || 'san-pham'}</span></div>
+              <div><span class="info-label">Mô tả:</span><span class="info-value" style="margin-left: 8px;">${p.description || ''}</span></div>
+              ${p.certification ? `<div><span class="info-label">Chứng nhận:</span><a class="info-value" href="http://localhost:3001${p.certification}" target="_blank" style="margin-left:8px; color:#16A34A;">Xem file</a></div>` : ''}
+            </div>
+            <div style="display: flex; gap: 12px; margin-top: 16px;">
+              <button onclick="approveProduct(${p.product_id})" class="btn btn-success" style="padding: 12px 24px;">✅ Phê Duyệt</button>
+              <button onclick="rejectProduct(${p.product_id}, '${(p.name || '').replace(/'/g, "\\'")}')" class="btn btn-danger" style="padding: 12px 24px;">❌ Từ Chối</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  } catch (error) {
+    console.error(error);
+    container.innerHTML = `<div class="alert alert-error">Không thể tải sản phẩm chờ duyệt: ${error.message}</div>`;
+    emptyState.style.display = 'none';
+  }
+}
+
+async function approveProduct(productId) {
+  if (!confirm('Bạn có chắc chắn muốn phê duyệt sản phẩm này?')) return;
+  try {
+    const resp = await fetch(PRODUCTS_API_BASE + '/' + productId + '/approve', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    if (!resp.ok) throw new Error('Không thể phê duyệt sản phẩm');
+    alert('Đã phê duyệt sản phẩm');
+    await renderPendingProducts();
+  } catch (error) {
+    console.error(error);
+    alert(error.message || 'Lỗi khi phê duyệt sản phẩm');
+  }
+}
+
+async function rejectProduct(productId, productName) {
+  const reason = prompt('Nhập lý do từ chối sản phẩm "' + productName + '"');
+  if (!reason || !reason.trim()) return;
+
+  try {
+    const resp = await fetch(PRODUCTS_API_BASE + '/' + productId + '/reject', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reason: reason.trim() })
+    });
+    if (!resp.ok) {
+      const body = await resp.json().catch(() => ({}));
+      throw new Error(body.error || 'Không thể từ chối sản phẩm');
+    }
+    alert('Đã từ chối sản phẩm');
+    await renderPendingProducts();
+  } catch (error) {
+    console.error(error);
+    alert(error.message || 'Lỗi khi từ chối sản phẩm');
   }
 }
 
