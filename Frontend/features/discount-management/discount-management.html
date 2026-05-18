@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quản Lý Khuyến Mãi - Nông Sản Sạch</title>
+  <link rel="stylesheet" href="../../css/style.css">
+</head>
+<body>
+  <div class="container mt-32" style="padding-bottom: 48px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px;">
+      <h1 style="color: #000; font-size: 24px; font-weight: 700;">Quản Lý Khuyến Mãi</h1>
+      <div style="display: flex; gap: 12px;">
+        <button onclick="showTab('list')" class="btn">Danh Sách</button>
+        <button onclick="showTab('create')" class="btn btn-success">Tạo Mới</button>
+      </div>
+    </div>
+
+    <div id="listTab" style="display: none;">
+      <div style="background: #FFF; border-radius: 8px; padding: 24px; box-shadow: 0 10px 15px rgba(0,0,0,0.1);">
+        <div id="emptyPromotionsState" style="display: none; text-align: center; padding: 24px; color: #666;">Bạn chưa có khuyến mãi nào</div>
+        <div id="promotionsList"></div>
+      </div>
+    </div>
+
+    <div id="createTab" style="display: none;">
+      <div style="background: #FFF; border-radius: 8px; padding: 24px; box-shadow: 0 10px 15px rgba(0,0,0,0.1);">
+        <form id="createPromotionForm">
+          <div class="form-group">
+            <label class="form-label">Tên chương trình</label>
+            <input id="promotionName" class="form-input" required>
+          </div>
+
+          <div class="grid grid-2 gap-16">
+            <div class="form-group">
+              <label class="form-label">Thời gian bắt đầu</label>
+              <input type="date" id="startDate" class="form-input" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Thời gian kết thúc</label>
+              <input type="date" id="endDate" class="form-input" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Mức giảm (%)</label>
+            <input type="number" id="discountPercent" class="form-input" min="0" max="100" required>
+            <div id="highDiscountWarning" style="display:none;color:#92400E;margin-top:8px;">Mức giảm giá >70% cần lý do</div>
+          </div>
+
+          <div id="productsContainer"></div>
+
+          <div id="reasonForHighDiscount" style="display:none;">
+            <div class="form-group">
+              <label class="form-label">Lý do cho giảm giá cao</label>
+              <textarea id="highDiscountReason" class="form-textarea"></textarea>
+            </div>
+          </div>
+
+          <div id="timeOverlapWarning" style="display:none;color:#92400E;margin-top:8px;">Thời gian khuyến mãi trùng với chương trình khác</div>
+
+          <div style="display:flex;gap:12px;margin-top:16px;">
+            <button type="submit" class="btn btn-success">Gửi yêu cầu</button>
+            <button type="button" onclick="showTab('list')" class="btn">Hủy</button>
+          </div>
+        </form>
+        <div id="errorMessage" style="display:none;color:#EF4444;margin-top:12px;"></div>
+        <div id="successMessage" style="display:none;color:#16A34A;margin-top:12px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../shared/data.js"></script>
+  <script src="../shared/data-business.js"></script>
+  <script src="./discount-management.js"></script>
+</body>
+</html>

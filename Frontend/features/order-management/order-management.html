@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quản lý đơn hàng - Nông Sản Sạch</title>
+  <link rel="stylesheet" href="../../css/style.css">
+  <link rel="stylesheet" href="../../css/order-management.css">
+</head>
+<body>
+  <!-- Shared Header Placeholder -->
+  <div id="siteHeader"></div>
+
+  <!-- Main Header -->
+  <div class="main-header">
+    <a href="../home/index.html" class="logo">
+      <div class="logo-icon">🌱</div>
+      <div class="logo-text">
+        <h1>Nông Sản Sạch</h1>
+        <p>Organic Marketplace</p>
+      </div>
+    </a>
+  </div>
+
+  <!-- Main Content -->
+  <div class="container mt-32">
+    <div class="order-management-container">
+      <!-- Header -->
+      <div class="order-header">
+        <div class="tab-nav-container">
+          <div class="tab-nav-item active" data-tab="my-orders">
+            Đơn hàng của tôi
+          </div>
+          <div class="tab-nav-item" data-tab="business-orders">
+            Quản lý đơn hàng (Doanh nghiệp)
+          </div>
+        </div>
+      </div>
+
+      <!-- My Orders Tab -->
+      <div id="my-orders-tab" class="tab-content active">
+        <div class="order-page-header">
+          <h1 class="order-page-title">Đơn hàng của tôi</h1>
+          <p class="order-page-subtitle">Theo dõi trạng thái và quản lý các đơn hàng của bạn</p>
+        </div>
+
+        <!-- Search and Filters -->
+        <div style="display: flex; gap: 16px; margin-bottom: 24px; align-items: center; flex-wrap: wrap;">
+          <div style="flex: 1; min-width: 250px;">
+            <input type="text" id="orderSearch" placeholder="Tìm kiếm theo mã đơn hàng..." 
+                   style="width: 100%; padding: 10px 16px; border: 1px solid #E5E7EB; border-radius: 4px; font-size: 14px;">
+          </div>
+          <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+            <button class="status-filter-btn active" data-status="all">Tất cả</button>
+            <button class="status-filter-btn" data-status="preparing">Đang chuẩn bị</button>
+            <button class="status-filter-btn" data-status="shipping">Đang vận chuyển</button>
+            <button class="status-filter-btn" data-status="delivered">Đã giao hàng</button>
+            <button class="status-filter-btn" data-status="completed">Hoàn thành</button>
+          </div>
+        </div>
+
+        <!-- Orders List -->
+        <div id="ordersList">
+          <!-- Orders will be loaded here -->
+        </div>
+      </div>
+
+      <!-- Business Orders Tab (Hidden by default) -->
+      <div id="business-orders-tab" class="tab-content">
+        <div class="business-inline-root" style="padding:12px 0;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <h2 style="margin:0; font-size:20px; color:#111;">Quản Lý Đơn Hàng</h2>
+              <div style="color:#666; font-size:13px; margin-top:6px;">Tài khoản: <strong id="bo-account-name">-</strong></div>
+            </div>
+            <div style="display:flex; gap:12px; align-items:center;">
+              <button id="bo-refresh" class="btn" style="padding:8px 12px; border-radius:6px; background:#F5F5F5; border:1px solid #E5E7EB;">⟳ Làm mới</button>
+            </div>
+          </div>
+
+          <div style="margin-top:12px; display:flex; gap:16px; align-items:center; font-size:14px; color:#444;">
+            <div>Chờ xử lý (<span id="bo-pendingCount">0</span>)</div>
+            <div>Đang vận chuyển (<span id="bo-shippingCount">0</span>)</div>
+            <div>Đã giao hàng (<span id="bo-deliveredCount">0</span>)</div>
+            <div>Yêu cầu trả hàng (<span id="bo-returnCount">0</span>)</div>
+          </div>
+
+          <div id="bo-ordersList" style="margin-top:18px;">
+            <div class="empty-state" style="padding:36px; text-align:center; color:#666;">Không có đơn hàng nào</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modals and other DOM elements omitted for brevity (copied from original) -->
+
+  <script src="../shared/data.js"></script>
+  <script src="../shared/data-business.js"></script>
+  <script src="../shared/header.js"></script>
+  <script src="./order-management.js"></script>
+</body>
+</html>

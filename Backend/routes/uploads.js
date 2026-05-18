@@ -31,4 +31,25 @@ router.post('/license', upload.single('file'), (req, res) => {
   return res.json({ path: relative, filename: req.file.filename });
 });
 
+// POST /api/uploads/product-assets
+// fields:
+// - images: multiple product images
+// - certificate: single certificate file
+router.post('/product-assets', upload.fields([
+  { name: 'images', maxCount: 10 },
+  { name: 'certificate', maxCount: 1 }
+]), (req, res) => {
+  const imageFiles = (req.files && req.files.images) ? req.files.images : [];
+  const certificateFile = (req.files && req.files.certificate && req.files.certificate[0])
+    ? req.files.certificate[0]
+    : null;
+
+  const imagePaths = imageFiles.map((file) => `/uploads/${file.filename}`);
+  const certificationPath = certificateFile ? `/uploads/${certificateFile.filename}` : '';
+  return res.json({
+    images: imagePaths,
+    certification: certificationPath
+  });
+});
+
 module.exports = router;

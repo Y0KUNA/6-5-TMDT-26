@@ -203,6 +203,12 @@ async function loadProducts() {
   const max = parseFloat(document.getElementById('priceMax')?.value || '') || null;
   const place = document.getElementById('placeSelect')?.value || '';
 
+  // read search input from shared or local search box
+  const sharedSearch = document.getElementById('sharedSearchInput')?.value || document.getElementById('searchInput')?.value || '';
+  const localSearch = document.getElementById('homeSearchInput')?.value || document.getElementById('searchInput')?.value || '';
+  const urlQ = getQueryParam('q') || '';
+  const q = (localSearch || sharedSearch || urlQ).trim().toLowerCase();
+
   // rating filter: support exact 5 or greater-than options like '4+' meaning rating > 4
   const ratingVal = document.getElementById('ratingSelect')?.value || '';
   let ratingMin = null;
@@ -219,6 +225,11 @@ async function loadProducts() {
 
   // filter
   const filtered = products.filter(p => {
+    // apply search term first (name + description)
+    if (q) {
+      const hay = ((p.name || '') + ' ' + (p.description || '')).toLowerCase();
+      if (hay.indexOf(q) === -1) return false;
+    }
     const price = (p.units && p.units[0] && p.units[0].price) ? Number(p.units[0].price) : 0;
     if (min !== null && price < min) return false;
     if (max !== null && price > max) return false;
@@ -273,7 +284,7 @@ function loadFeaturedProducts() {
 // Fetch products from backend and map to front-end product shape
 async function fetchProducts() {
   try {
-    const resp = await fetch(window.PRODUCTS_API_URL || 'http://localhost:3000/api/products');
+  const resp = await fetch('http://localhost:3001/api/products');
     if (!resp.ok) throw new Error('API returned ' + resp.status);
     const body = await resp.json();
     const rows = Array.isArray(body.products) ? body.products : [];
@@ -298,6 +309,16 @@ async function fetchProducts() {
   }
 }
 
+// Helper to read query params
+function getQueryParam(name) {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    return params.get(name);
+  } catch (e) {
+    return null;
+  }
+}
+
 // View product
 function viewProduct(productId) {
   window.location.href = '../product/product.html?id=' + productId;
@@ -307,6 +328,36 @@ function viewProduct(productId) {
 document.addEventListener('DOMContentLoaded', function () {
   // initialize filters and product list
   loadSidebarCategories();
+  // wire search inputs/buttons (support different templates)
+  const sharedSearchInput = document.getElementById('sharedSearchInput') || document.getElementById('searchInput');
+  const sharedSearchBtn = document.getElementById('sharedSearchBtn') || document.querySelector('.search-btn');
+  const homeSearchInput = document.getElementById('homeSearchInput') || document.getElementById('searchInput');
+  const homeSearchBtn = document.getElementById('homeSearchBtn') || document.querySelector('.search-btn');
+
+  // populate from q param
+  const qparam = getQueryParam('q');
+  if (qparam) {
+    if (sharedSearchInput) sharedSearchInput.value = qparam;
+    if (homeSearchInput) homeSearchInput.value = qparam;
+    // also set plain #searchInput if present
+    const plainSearch = document.getElementById('searchInput');
+    if (plainSearch) plainSearch.value = qparam;
+  }
+
+  if (sharedSearchBtn && sharedSearchInput) {
+    sharedSearchBtn.addEventListener('click', function () {
+      // navigate to same page with q param so URL reflects search
+      const v = (sharedSearchInput.value || '').trim();
+      if (v) window.location.href = window.location.pathname + '?q=' + encodeURIComponent(v);
+    });
+  }
+
+  if (homeSearchBtn && homeSearchInput) {
+    homeSearchBtn.addEventListener('click', function () {
+      const v = (homeSearchInput.value || '').trim();
+      if (v) window.location.href = window.location.pathname + '?q=' + encodeURIComponent(v);
+    });
+  }
   // ensure sort select exists before wiring
   const sortEl = document.getElementById('sortSelect');
   if (sortEl) sortEl.addEventListener('change', loadProducts);
@@ -352,7 +403,24 @@ document.addEventListener('DOMContentLoaded', function () {
       handleLogout();
     };
 
-    dropdown.appendChild(profileLink);
+    // If admin, show only system admin link (no profile / order links)
+    try {
+      if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'ADMIN')) {
+        const adminMgmtLink = document.createElement('a');
+        adminMgmtLink.href = '../product-management/product-management.html';
+        adminMgmtLink.textContent = 'Quản trị hệ thống';
+        adminMgmtLink.style.cssText = 'display: block; padding: 12px; color: #333; text-decoration: none;';
+
+        dropdown.appendChild(adminMgmtLink);
+      } else {
+        // non-admin users see their profile link
+        dropdown.appendChild(profileLink);
+      }
+    } catch (e) {
+      console.warn('Could not determine user role for admin links', e);
+      dropdown.appendChild(profileLink);
+    }
+
     dropdown.appendChild(logoutLink);
 
     userMenu.appendChild(userButton);

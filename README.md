@@ -1,114 +1,202 @@
-# Sàn thương mại điện tử nông sản (Nông Sản Sạch)
+# Nông Sản Sạch - Organic Marketplace
 
-Dự án gồm **giao diện tĩnh** (HTML/CSS/JS) và **API Node.js (Express) + PostgreSQL**.
+Trang web thương mại điện tử chuyên về nông sản hữu cơ và sản phẩm sạch.
 
----
+## Tính năng
 
-## Yêu cầu môi trường
+### Khách hàng
+- 🏠 **Trang chủ**: Xem sản phẩm nổi bật, flash sale, danh mục
+- 🔍 **Tìm kiếm**: Tìm kiếm nông sản theo từ khóa
+- 📦 **Chi tiết sản phẩm**: Xem thông tin chi tiết, giá, đánh giá
+- 🛒 **Giỏ hàng**: Thêm, xóa, cập nhật số lượng sản phẩm
+- 💳 **Thanh toán**: Chọn phương thức thanh toán, nhập địa chỉ giao hàng
+- 👤 **Đăng ký/Đăng nhập**: Tạo tài khoản và đăng nhập
 
-- [Node.js](https://nodejs.org/) (khuyến nghị LTS)
-- [PostgreSQL](https://www.postgresql.org/download/) đang chạy cục bộ
+### Doanh nghiệp/Người bán
+- 📝 **Đăng ký bán hàng**: Đăng ký tài khoản bán hàng với thông tin doanh nghiệp
+- ✅ **Chờ phê duyệt**: Tài khoản được quản trị viên phê duyệt
+- 📊 **Quản lý sản phẩm**: Xem danh sách, thêm, sửa, xóa sản phẩm
+- 📈 **Thống kê**: Xem doanh thu, sản phẩm bán chạy, đánh giá
 
----
+### Quản trị viên
+- 👥 **Phê duyệt tài khoản**: Phê duyệt hoặc từ chối đơn đăng ký bán hàng
+- 📋 **Quản lý người dùng**: Xem và quản lý người dùng, người bán
 
-## 1. Tạo cơ sở dữ liệu
+## Cấu trúc dự án
 
-Script mặc định trong code dùng database tên **`ECommerce`**, user **`postgres`**, mật khẩu **`12345678`** (trùng với `server/.env` và `server/db.js`).
+```
+nong-san-sach/
+├── css/
+│   └── style.css              # CSS chính
+├── js/
+│   ├── admin-approval.js      # Quản lý phê duyệt
+│   ├── cart.js                # Giỏ hàng
+│   ├── checkout.js            # Thanh toán
+│   ├── data.js                # Dữ liệu mẫu
+│   ├── home.js                # Trang chủ
+│   ├── login.js               # Đăng nhập
+│   ├── product.js             # Chi tiết sản phẩm
+│   ├── product-management.js  # Quản lý sản phẩm
+│   └── register.js            # Đăng ký
+├── admin-approval.html        # Phê duyệt tài khoản
+├── cart.html                  # Giỏ hàng
+├── checkout.html              # Thanh toán
+├── index.html                 # Trang chủ
+├── login.html                 # Đăng nhập
+├── product.html               # Chi tiết sản phẩm
+├── product-add.html           # Thêm sản phẩm
+├── product-management.html    # Danh sách sản phẩm
+├── register.html              # Đăng ký khách hàng
+├── register-business.html     # Đăng ký doanh nghiệp
+├── statistics.html            # Thống kê
+└── package.json              # Cấu hình npm
 
-1. Mở **pgAdmin** hoặc `psql` và tạo database (nếu chưa có):
-
-```sql
-CREATE DATABASE "ECommerce" ENCODING 'UTF8';
 ```
 
-2. Chạy file khởi tạo schema (từ thư mục gốc repo):
+## Cài đặt
 
+1. Clone repository:
 ```bash
-psql -U postgres -d ECommerce -f database/database_gen.sql
+git clone <repository-url>
+cd nong-san-sach
 ```
 
-**Lưu ý:** File SQL có lệnh `ALTER USER postgres WITH PASSWORD '12345678';`. Nếu mật khẩu Postgres của bạn khác, chỉnh lại cho khớp hoặc bỏ qua dòng đó và cập nhật `DATABASE_URL` trong `server/.env`.
-
----
-
-## 2. Cấu hình backend
-
-Trong thư mục `server/`, file `.env` mẫu:
-
-- `DATABASE_URL` — chuỗi kết nối PostgreSQL
-- `JWT_SECRET` — chuỗi bí mật ký JWT (nên đổi khi triển khai thật)
-- `PORT` — cổng API (mặc định **3000**)
-
-Sau khi sửa `.env`, không cần làm thêm bước nào khác nếu chỉ chạy local.
-
----
-
-## 3. Chạy API server
-
+2. Cài đặt dependencies:
 ```bash
-cd server
 npm install
+```
+
+3. Chạy server:
+```bash
 npm start
 ```
 
-Chạy có tự động nạp lại khi sửa code:
-
-```bash
-npm run dev
+4. Mở trình duyệt và truy cập:
+```
+http://localhost:8080
 ```
 
-Khi thành công, terminal sẽ in: `Server listening on http://localhost:3000`.
+## Tài khoản test
 
----
+### Quản trị viên
+- Email: `admin@nongsansach.vn`
+- Mật khẩu: `admin123`
 
-## 4. Chạy thử giao diện (frontend)
+### Người dùng
+- Email: `nguyen.van.a@gmail.com`
+- Mật khẩu: `123456`
 
-Trang gọi API tới `http://localhost:3000` (ví dụ `features/home/home.js`). Nên mở site qua **HTTP** (không mở trực tiếp file `file://`) để tránh hạn chế trình duyệt.
+## Công nghệ sử dụng
 
-Từ **thư mục gốc** của repo, ví dụ dùng `serve` (cổng **8080** để không trùng với API **3000**):
+- **HTML5**: Cấu trúc trang web
+- **CSS3**: Styling và responsive design
+- **JavaScript**: Logic và tương tác
+- **LocalStorage**: Lưu trữ dữ liệu người dùng
 
-```bash
-npx --yes serve . -p 8080
+## Màu sắc chính
+
+- Primary Green: `#22C55E`
+- Dark Green: `#16A34A`
+- Orange: `#F7931E`
+- Red: `#FF5722`
+- Gray: `#F5F5F5`
+
+## Cấu trúc dữ liệu
+
+### User
+```javascript
+{
+  id: number,
+  fullName: string,
+  email: string,
+  phone: string,
+  address: string,
+  password: string,
+  dateOfBirth: string,
+  isVendor: boolean,
+  createdAt: string
+}
 ```
 
-Sau đó mở trình duyệt:
-
-- Trang chủ: `http://localhost:8080/features/home/index.html`
-
-Các trang khác (đăng nhập, đăng ký, …) nằm trong `features/` — điều hướng theo link trên giao diện hoặc mở trực tiếp file `.html` tương ứng dưới cùng host `http://localhost:8080/...`.
-
-**Thứ tự chạy thử:** bật PostgreSQL → chạy bước 1 (schema) → bước 3 (API) → bước 4 (static server).
-
----
-
-## 5. Kiểm tra nhanh API
-
-- **Ping:** trình duyệt hoặc terminal:
-
-```bash
-curl http://localhost:3000/api/ping
+### Vendor
+```javascript
+{
+  id: number,
+  userId: number,
+  fullName: string,
+  email: string,
+  phone: string,
+  businessName: string,
+  businessAddress: string,
+  businessPhone: string,
+  status: 'pending' | 'approved' | 'rejected',
+  licenseImage: string,
+  rejectReason?: string,
+  createdAt: string
+}
 ```
 
-Kỳ vọng: JSON dạng `{ "ok": true, "ts": ... }`.
-
-- **Sản phẩm (GET):** `http://localhost:3000/api/products` (cần đã có dữ liệu bảng sản phẩm trong DB).
-
----
-
-## 6. Kiểm tra kết nối PostgreSQL (tùy chọn)
-
-Trong `psql`, sau khi `\c ECommerce`:
-
-```sql
-SELECT NOW();
+### Product
+```javascript
+{
+  id: number,
+  name: string,
+  description: string,
+  image: string,
+  category: string,
+  units: [
+    {
+      unit: string,
+      price: number
+    }
+  ],
+  rating: number,
+  sold: number,
+  certificate: string
+}
 ```
 
-Nếu trả về thời gian server là DB đã chạy và kết nối được.
+## Tính năng nổi bật
 
----
+- ✨ Giao diện hiện đại, thân thiện
+- 📱 Responsive design - tương thích mọi thiết bị
+- 🎨 Thiết kế dựa trên Figma
+- 🔒 Xác thực người dùng
+- 💾 Lưu trữ local với localStorage
+- 🛡️ Giấy chứng nhận an toàn thực phẩm
+- ⚡ Flash sale
+- ⭐ Đánh giá sản phẩm
+- 📊 Thống kê doanh thu
 
-## Tài liệu nhóm (nếu cần bổ sung)
+## Hướng dẫn sử dụng
 
-- Link repo: *(điền URL)*
-- Báo cáo ngắn gọn 1 trang: *(đính kèm / link)*
-- Phân chia công việc: *(ghi tên thành viên và phần việc)*
+### Khách hàng
+
+1. **Đăng ký tài khoản**: Nhấn "Đăng Ký" ở góc phải trên cùng
+2. **Duyệt sản phẩm**: Xem sản phẩm trên trang chủ hoặc tìm kiếm
+3. **Thêm vào giỏ**: Chọn sản phẩm, chọn đơn vị và số lượng
+4. **Thanh toán**: Vào giỏ hàng, nhập thông tin giao hàng và thanh toán
+
+### Người bán
+
+1. **Đăng ký bán hàng**: Chọn "Trở thành Người bán" hoặc tích "Đăng ký bán hàng" khi đăng ký
+2. **Chờ phê duyệt**: Quản trị viên sẽ xem xét đơn đăng ký
+3. **Quản lý sản phẩm**: Sau khi được phê duyệt, thêm và quản lý sản phẩm
+4. **Xem thống kê**: Theo dõi doanh thu và hiệu quả kinh doanh
+
+### Quản trị viên
+
+1. **Đăng nhập**: Sử dụng tài khoản admin
+2. **Phê duyệt**: Truy cập trang "Phê duyệt tài khoản"
+3. **Xem xét**: Xem thông tin doanh nghiệp và giấy phép
+4. **Quyết định**: Phê duyệt hoặc từ chối với lý do
+
+## Liên hệ
+
+- Website: https://nongsansach.vn
+- Email: support@nongsansach.vn
+- Hotline: 1900-xxxx
+
+## License
+
+MIT License - Copyright (c) 2024 Nông Sản Sạch
