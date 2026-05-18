@@ -200,3 +200,7 @@ http://localhost:8080
 ## License
 
 MIT License - Copyright (c) 2024 Nông Sản Sạch
+
+---
+
+> Cập nhật lần cuối: 18/05/2026
