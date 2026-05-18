@@ -8,7 +8,7 @@ It covers the currently implemented endpoints, payload shapes, example responses
 
 ## Overview
 
-Base URL (development): http://localhost:3000
+Base URL (development): http://127.0.0.1:3001
 
 All API paths are mounted under `/api` (for example: `GET /api/products`). The server also serves uploaded files under `/uploads/<filename>` as static assets.
 
@@ -133,7 +133,7 @@ Return detailed information for a single product. Example response:
     "stockQuantity": 200,
     "origin": "Đà Lạt",
     "certification": "VietGAP",
-    "images": ["http://localhost:3000/uploads/abc.jpg", "http://localhost:3000/uploads/def.jpg"],
+  "images": ["http://127.0.0.1:3001/uploads/abc.jpg", "http://127.0.0.1:3001/uploads/def.jpg"],
     "createdAt": "2024-02-01T..."
   }
 }
@@ -207,25 +207,25 @@ Behavior:
 
 ## Example PowerShell curl (Invoke-RestMethod) tests
 
-Note: use these in Windows PowerShell. Replace `localhost:3000` with your server host/port if different.
+Note: use these in Windows PowerShell. Replace `127.0.0.1:3001` with your server host/port if different.
 
 Get pending vendors:
 
 ```powershell
-Invoke-RestMethod -Method Get -Uri "http://localhost:3000/api/vendors/pending"
+Invoke-RestMethod -Method Get -Uri "http://127.0.0.1:3001/api/vendors/pending"
 ```
 
 Approve vendor (enterpriseId = 17):
 
 ```powershell
-Invoke-RestMethod -Method Post -Uri "http://localhost:3000/api/vendors/17/approve"
+Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:3001/api/vendors/17/approve"
 ```
 
 Reject vendor with reason:
 
 ```powershell
 $body = @{ reason = 'Thông tin không hợp lệ' } | ConvertTo-Json
-Invoke-RestMethod -Method Post -Uri "http://localhost:3000/api/vendors/17/reject" -Body $body -ContentType 'application/json'
+Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:3001/api/vendors/17/reject" -Body $body -ContentType 'application/json'
 ```
 
 Register example (enterprise with base64 license):
@@ -241,14 +241,14 @@ $payload = @{
   licenseFile = 'data:image/png;base64,iVBORw0KGgoAAAANS...'
 } | ConvertTo-Json -Depth 5
 
-Invoke-RestMethod -Method Post -Uri "http://localhost:3000/api/auth/register" -Body $payload -ContentType 'application/json'
+Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:3001/api/auth/register" -Body $payload -ContentType 'application/json'
 ```
 
 Login example:
 
 ```powershell
 $payload = @{ email = 'admin@nongsanecommerce.vn'; password = 'Admin@123456' } | ConvertTo-Json
-Invoke-RestMethod -Method Post -Uri "http://localhost:3000/api/auth/login" -Body $payload -ContentType 'application/json'
+Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:3001/api/auth/login" -Body $payload -ContentType 'application/json'
 ```
 
 ---

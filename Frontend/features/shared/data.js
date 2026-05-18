@@ -1,5 +1,37 @@
 // Mock Data for Nông Sản Sạch (moved from js/data.js)
 
+// Ensure runtime env is available on pages: dynamically inject /env.js when not present.
+// Fallback order:
+// 1) /env.js (same origin)
+// 2) http://127.0.0.1:3001/env.js (common backend dev origin)
+// 3) features/shared/frontend-env.js (static fallback we ship with repo)
+try {
+  (function ensureEnv() {
+    if (window.APP_CONFIG) return;
+    const hasLocal = !!document.querySelector('script[src="/env.js"]');
+    const addScript = (src) => {
+      if (document.querySelector('script[src="' + src + '"]')) return;
+      const s = document.createElement('script');
+      s.src = src;
+      s.async = false;
+      document.head.appendChild(s);
+    };
+
+    if (!hasLocal) {
+      // Try to fetch /env.js to detect 200 vs 404 (avoid adding a script that 404s)
+        // try project API at localhost:3001 directly
+        fetch('http://localhost:3001/env.js', { method: 'HEAD' }).then(r => {
+          if (r.ok) {
+            addScript('http://localhost:3001/env.js');
+            return;
+          }
+          // final fallback to shipped static frontend env
+          addScript('/features/shared/frontend-env.js');
+        }).catch(() => addScript('/features/shared/frontend-env.js'));
+    }
+  })();
+} catch (e) { console.warn('env loader error', e); }
+
 const mockData = {
   // Users
   users: [

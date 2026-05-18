@@ -1,15 +1,28 @@
 // Cart functionality
 
 // Render cart items grouped by store
-function renderCart() {
+async function renderCart() {
   const container = document.getElementById('cartItems');
   const emptyCart = document.getElementById('emptyCart');
   const summary = document.getElementById('cartSummary');
-  
   if (!container) return;
 
-  const cartItems = dataManager.getCartWithDetails();
-  
+  let cartItems = [];
+  try {
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      const resp = await fetch('/api/cart', { headers: { Authorization: 'Bearer ' + token } });
+      if (resp.ok) {
+        const body = await resp.json();
+        cartItems = (body.cart && body.cart.items) ? body.cart.items.map(i => ({ productId: i.product_id, product: { id: i.product_id, name: i.name }, unit: { name: i.unit }, quantity: i.quantity, subtotal: Number(i.subtotal || 0), cartItemId: i.cart_item_id })) : [];
+      }
+    }
+  } catch (err) {
+    console.warn('Failed to load cart from API, falling back to client', err);
+  }
+
+  if (!cartItems || cartItems.length === 0) cartItems = dataManager.getCartWithDetails();
+
   if (cartItems.length === 0) {
     container.style.display = 'none';
     emptyCart.style.display = 'block';
@@ -21,17 +34,13 @@ function renderCart() {
   emptyCart.style.display = 'none';
   summary.style.display = 'block';
 
-  // Group items by vendor
   const itemsByVendor = {};
   cartItems.forEach(item => {
-    const vendorId = item.product.vendorId;
-    if (!itemsByVendor[vendorId]) {
-      itemsByVendor[vendorId] = [];
-    }
+    const vendorId = item.product.vendorId || 0;
+    if (!itemsByVendor[vendorId]) itemsByVendor[vendorId] = [];
     itemsByVendor[vendorId].push(item);
   });
 
-  // Render grouped items
   let html = '';
   let totalAmount = 0;
 
@@ -46,18 +55,16 @@ function renderCart() {
 
     items.forEach(item => {
       const isChecked = !item.unchecked;
-      if (isChecked) {
-        totalAmount += item.subtotal;
-      }
+      if (isChecked) totalAmount += Number(item.subtotal || 0);
 
       html += '<div class="cart-item">';
-      html += '<div class="cart-item-checkbox' + (isChecked ? ' checked' : '') + '" onclick="toggleCartItem(' + item.productId + ', ' + item.unitIndex + ')"></div>';
+      html += '<div class="cart-item-checkbox' + (isChecked ? ' checked' : '') + '" onclick="toggleCartItem(' + (item.productId || item.product.id) + ', 0)"></div>';
       html += '<div class="cart-item-info">';
-      html += '<div class="cart-item-name">' + item.product.name + '</div>';
-      html += '<div class="cart-item-unit"><span>Đơn vị: </span><span>' + item.unit.name + '</span></div>';
+      html += '<div class="cart-item-name">' + (item.product ? item.product.name : 'Sản phẩm') + '</div>';
+      html += '<div class="cart-item-unit"><span>Đơn vị: </span><span>' + (item.unit ? item.unit.name : '') + '</span></div>';
       html += '<div class="cart-item-quantity"><span>Số lượng: </span><span>' + item.quantity + '</span></div>';
       html += '</div>';
-      html += '<div class="cart-item-price">' + item.subtotal.toLocaleString() + ' VNĐ</div>';
+      html += '<div class="cart-item-price">' + Number(item.subtotal).toLocaleString() + ' VNĐ</div>';
       html += '</div>';
     });
 

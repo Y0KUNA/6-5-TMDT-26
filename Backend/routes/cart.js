@@ -23,9 +23,32 @@ router.use(authMiddleware);
 
 // helper: locate or create cart for a customer id
 async function ensureCartForCustomer(client, customerId) {
-  const r = await client.query('SELECT cart_id FROM carts WHERE customer_id = $1', [customerId]);
+  // Ensure the user exists in users and customers tables to satisfy FK constraints
+  const uid = Number(customerId);
+  if (Number.isNaN(uid) || uid <= 0) throw new Error('Invalid customerId');
+
+  // Check users table
+  const userR = await client.query('SELECT user_id FROM users WHERE user_id = $1', [uid]);
+  if (userR.rowCount === 0) {
+    // Create a minimal user record for testing (non-production convenience)
+    // Note: this inserts an explicit user_id value to match the requested customerId
+    await client.query(
+      `INSERT INTO users (user_id, role, full_name, email, phone, password_hash, is_active, created_at)
+       VALUES ($1, 'customer', $2, $3, $4, $5, true, CURRENT_TIMESTAMP)`,
+      [uid, 'Khách hàng ' + uid, `user+${uid}@example.com`, '0000000000', '']
+    );
+  }
+
+  // Ensure customers row exists
+  const custR = await client.query('SELECT customer_id FROM customers WHERE customer_id = $1', [uid]);
+  if (custR.rowCount === 0) {
+    await client.query('INSERT INTO customers (customer_id, address) VALUES ($1, NULL)', [uid]);
+  }
+
+  // Now ensure cart
+  const r = await client.query('SELECT cart_id FROM carts WHERE customer_id = $1', [uid]);
   if (r.rowCount > 0) return r.rows[0].cart_id;
-  const ins = await client.query('INSERT INTO carts (customer_id, total_price) VALUES ($1, $2) RETURNING cart_id', [customerId, 0]);
+  const ins = await client.query('INSERT INTO carts (customer_id, total_price) VALUES ($1, $2) RETURNING cart_id', [uid, 0]);
   return ins.rows[0].cart_id;
 }
 
@@ -41,9 +64,13 @@ router.get('/', async (req, res) => {
     const baseUrl = req.protocol + '://' + req.get('host');
     const itemsQuery = `
       SELECT ci.cart_item_id, ci.product_id, ci.unit, ci.quantity, ci.unit_price, ci.subtotal, p.name,
+        p.enterprise_id,
+        COALESCE(e.business_name, u.full_name, ('Enterprise #' || p.enterprise_id::text)) AS enterprise_name,
         CASE WHEN pi.image_url ILIKE 'http%' THEN pi.image_url ELSE $2 || pi.image_url END AS image
       FROM cart_items ci
       JOIN products p ON p.product_id = ci.product_id
+      LEFT JOIN enterprises e ON e.enterprise_id = p.enterprise_id
+      LEFT JOIN users u ON u.user_id = p.enterprise_id
       LEFT JOIN LATERAL (
         SELECT image_url FROM product_images WHERE product_id = p.product_id AND is_primary = true LIMIT 1
       ) pi ON true
@@ -57,26 +84,38 @@ router.get('/', async (req, res) => {
   }
 });
 
-// POST /api/cart/items -> { productId, unit, unitPrice, quantity }
+// POST /api/cart/items -> { productId, enterpriseId, unit, unitPrice, quantity }
 router.post('/items', async (req, res) => {
   const customerId = req.userId || req.body.customerId;
-  const { productId, unit, unitPrice, quantity } = req.body;
+  const { productId, enterpriseId, unit, unitPrice, quantity } = req.body;
   if (!customerId || !productId || !unit || !unitPrice || !quantity) return res.status(400).json({ error: 'Missing fields' });
 
   const client = await db.pool.connect();
   try {
     await client.query('BEGIN');
     const cartId = await ensureCartForCustomer(client, customerId);
+    const productR = await client.query('SELECT product_id, name, unit, price, stock_quantity FROM products WHERE product_id = $1', [productId]);
+    if (productR.rowCount === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Product not found' });
+    }
+    const product = productR.rows[0];
 
     // check existing item (product + unit)
     const existing = await client.query('SELECT cart_item_id, quantity FROM cart_items WHERE cart_id = $1 AND product_id = $2 AND unit = $3', [cartId, productId, unit]);
+    const currentQty = existing.rowCount > 0 ? Number(existing.rows[0].quantity || 0) : 0;
+    const requestedQty = currentQty + Number(quantity);
+    if (requestedQty > Number(product.stock_quantity || 0)) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({ error: `Chỉ còn ${product.stock_quantity} ${product.unit || unit} trong kho` });
+    }
+    const finalUnitPrice = Number(unitPrice || product.price || 0);
     if (existing.rowCount > 0) {
-      const newQty = existing.rows[0].quantity + Number(quantity);
-      const subtotal = Number(unitPrice) * newQty;
-      await client.query('UPDATE cart_items SET quantity = $1, unit_price = $2, subtotal = $3 WHERE cart_item_id = $4', [newQty, unitPrice, subtotal, existing.rows[0].cart_item_id]);
+      const subtotal = finalUnitPrice * requestedQty;
+      await client.query('UPDATE cart_items SET quantity = $1, unit_price = $2, subtotal = $3 WHERE cart_item_id = $4', [requestedQty, finalUnitPrice, subtotal, existing.rows[0].cart_item_id]);
     } else {
-      const subtotal = Number(unitPrice) * Number(quantity);
-      await client.query('INSERT INTO cart_items (cart_id, product_id, unit, quantity, unit_price, subtotal) VALUES ($1,$2,$3,$4,$5,$6)', [cartId, productId, unit, quantity, unitPrice, subtotal]);
+      const subtotal = finalUnitPrice * Number(quantity);
+      await client.query('INSERT INTO cart_items (cart_id, product_id, unit, quantity, unit_price, subtotal) VALUES ($1,$2,$3,$4,$5,$6)', [cartId, productId, unit, quantity, finalUnitPrice, subtotal]);
     }
 
     // recalc cart total
@@ -142,13 +181,51 @@ router.delete('/items/:id', async (req, res) => {
   } finally { client.release(); }
 });
 
-// POST /api/cart/checkout -> { shippingAddress, paymentMethod }
-// Creates orders for each enterprise (simple single-enterprise assumption: assign to first item's product enterprise)
+function normalizePaymentMethod(method) {
+  const raw = String(method || '').toLowerCase();
+  if (raw === 'cod') return 'COD';
+  return 'ONLINE';
+}
+
+function normalizePaymentResult(result) {
+  const raw = String(result || '').toUpperCase();
+  if (raw === 'FAILED' || raw === 'TIMEOUT' || raw === 'CANCELLED') return raw;
+  if (raw === 'SUCCESS') return 'SUCCESS';
+  return 'PENDING';
+}
+
+function buildShippingAddress(value) {
+  if (typeof value === 'string') return value.trim();
+  if (value && typeof value === 'object') {
+    const parts = [value.fullName, value.phone, value.address].filter(Boolean);
+    return parts.join(' - ');
+  }
+  return '';
+}
+
+// POST /api/cart/checkout -> { shippingAddress, paymentMethod, paymentResult, shippingFee, selectedCartItemIds }
+// Creates one order per enterprise and a matching payment row for each order.
 router.post('/checkout', async (req, res) => {
   const customerId = req.userId || req.body.customerId;
-  const { shippingAddress, paymentMethod } = req.body;
+  const { shippingAddress, paymentMethod, paymentResult, selectedCartItemIds } = req.body;
+  const shippingFee = Number(req.body.shippingFee || 30000);
+  const normalizedPaymentMethod = normalizePaymentMethod(paymentMethod);
+  const normalizedPaymentResult = normalizePaymentResult(paymentResult);
+  const addressText = buildShippingAddress(shippingAddress);
   if (!customerId) return res.status(400).json({ error: 'Authentication required' });
-  if (!shippingAddress || !paymentMethod) return res.status(400).json({ error: 'Missing fields' });
+  if (!addressText || !paymentMethod) return res.status(400).json({ error: 'Missing fields' });
+
+  if (normalizedPaymentMethod === 'ONLINE') {
+    if (normalizedPaymentResult === 'FAILED') return res.status(402).json({ error: 'Thanh toán thất bại, vui lòng thử lại' });
+    if (normalizedPaymentResult === 'TIMEOUT') return res.status(408).json({ error: 'Giao dịch hết thời gian' });
+    if (normalizedPaymentResult === 'CANCELLED') return res.status(409).json({ error: 'Khách hàng đã hủy thanh toán' });
+    if (normalizedPaymentResult !== 'SUCCESS') {
+      return res.status(202).json({
+        paymentRequired: true,
+        message: 'Vui lòng hoàn tất giao dịch thanh toán online trước khi tạo đơn hàng'
+      });
+    }
+  }
 
   const client = await db.pool.connect();
   try {
@@ -156,10 +233,36 @@ router.post('/checkout', async (req, res) => {
     const cartR = await client.query('SELECT cart_id FROM carts WHERE customer_id = $1', [customerId]);
     if (cartR.rowCount === 0) { await client.query('ROLLBACK'); return res.status(400).json({ error: 'Cart empty' }); }
     const cartId = cartR.rows[0].cart_id;
-    const itemsR = await client.query('SELECT ci.product_id, ci.unit, ci.quantity, ci.unit_price, ci.subtotal, p.enterprise_id, p.name FROM cart_items ci JOIN products p ON p.product_id = ci.product_id WHERE ci.cart_id = $1', [cartId]);
+
+    const selectedIds = Array.isArray(selectedCartItemIds)
+      ? selectedCartItemIds.map((id) => parseInt(id, 10)).filter((id) => !Number.isNaN(id))
+      : [];
+    const params = [cartId];
+    let selectedClause = '';
+    if (selectedIds.length > 0) {
+      params.push(selectedIds);
+      selectedClause = ' AND ci.cart_item_id = ANY($2::int[])';
+    }
+
+    const itemsR = await client.query(
+      `SELECT ci.cart_item_id, ci.product_id, ci.unit, ci.quantity, ci.unit_price, ci.subtotal,
+        p.enterprise_id, p.name, p.stock_quantity
+       FROM cart_items ci
+       JOIN products p ON p.product_id = ci.product_id
+       WHERE ci.cart_id = $1${selectedClause}`,
+      params
+    );
     if (itemsR.rowCount === 0) { await client.query('ROLLBACK'); return res.status(400).json({ error: 'Cart empty' }); }
 
-    // For simplicity, we create one order per enterprise. Group items by enterprise_id
+    const outOfStock = itemsR.rows.find((it) => Number(it.stock_quantity || 0) < Number(it.quantity || 0));
+    if (outOfStock) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({
+        error: `Sản phẩm "${outOfStock.name}" chỉ còn ${outOfStock.stock_quantity} ${outOfStock.unit} trong kho`
+      });
+    }
+
+    // Create one order per enterprise.
     const groups = {};
     itemsR.rows.forEach(it => {
       const ent = it.enterprise_id || 0;
@@ -167,25 +270,123 @@ router.post('/checkout', async (req, res) => {
       groups[ent].push(it);
     });
 
+    // Prepare totals per enterprise and grand total
+    const enterpriseTotals = {};
+    const enterpriseIds = Object.keys(groups);
+    enterpriseIds.forEach((entIdStr, idx) => {
+      const ent = Number(entIdStr) || 0;
+      const group = groups[entIdStr] || [];
+      const groupShippingFee = idx === 0 ? shippingFee : 0;
+      const subtotal = group.reduce((s, it) => s + Number(it.subtotal || 0), 0);
+      const total = subtotal + groupShippingFee;
+      enterpriseTotals[ent] = { subtotal, shippingFee: groupShippingFee, total };
+    });
+
+    const grandTotal = Object.values(enterpriseTotals).reduce((s, v) => s + Number(v.total || 0), 0);
+
+    // wallet helpers
+    async function getOrCreateWallet(ownerType, ownerId) {
+      const r = await client.query('SELECT wallet_id, balance FROM wallets WHERE owner_type = $1 AND owner_id = $2', [ownerType, ownerId]);
+      if (r.rowCount > 0) return r.rows[0];
+      const ins = await client.query('INSERT INTO wallets (owner_type, owner_id, balance) VALUES ($1,$2,$3) RETURNING wallet_id, balance', [ownerType, ownerId, 0]);
+      return ins.rows[0];
+    }
+
+    // If online payment and successful, perform wallet movement buyer -> platform (escrow)
+    let buyerWallet = null;
+    let platformWallet = null;
+    if (normalizedPaymentMethod === 'ONLINE' && normalizedPaymentResult === 'SUCCESS') {
+      buyerWallet = await getOrCreateWallet('CUSTOMER', customerId);
+      platformWallet = await getOrCreateWallet('PLATFORM', 0);
+      const buyerBalance = Number(buyerWallet.balance || 0);
+      if (buyerBalance < Number(grandTotal)) {
+        await client.query('ROLLBACK');
+        return res.status(402).json({ error: 'Số dư ví không đủ để thanh toán đơn hàng' });
+      }
+      // move funds
+      await client.query('UPDATE wallets SET balance = balance - $1 WHERE wallet_id = $2', [grandTotal, buyerWallet.wallet_id]);
+      await client.query('UPDATE wallets SET balance = balance + $1 WHERE wallet_id = $2', [grandTotal, platformWallet.wallet_id]);
+    }
+
     const createdOrders = [];
-    for (const entIdStr of Object.keys(groups)) {
+    const createdPayments = [];
+    for (let groupIndex = 0; groupIndex < enterpriseIds.length; groupIndex++) {
+      const entIdStr = enterpriseIds[groupIndex];
       const entId = Number(entIdStr) || 0;
       const groupItems = groups[entIdStr];
-      const total = groupItems.reduce((s, it) => s + Number(it.subtotal), 0);
-      const orderRes = await client.query('INSERT INTO orders (customer_id, enterprise_id, total_amount, shipping_fee, shipping_address, payment_method, status) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING order_id', [customerId, entId, total, 0, shippingAddress, paymentMethod, 'PENDING']);
+      const totals = enterpriseTotals[entId] || { subtotal: 0, shippingFee: 0, total: 0 };
+      const groupShippingFee = totals.shippingFee;
+      const subtotal = totals.subtotal;
+      const total = totals.total;
+      const orderRes = await client.query(
+        `INSERT INTO orders
+          (customer_id, enterprise_id, total_amount, shipping_fee, shipping_address, payment_status, payment_method, status)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+         RETURNING order_id`,
+        [
+          customerId,
+          entId,
+          total,
+          groupShippingFee,
+          addressText,
+          normalizedPaymentMethod === 'ONLINE' ? 'PAID' : 'UNPAID',
+          normalizedPaymentMethod,
+          'PENDING'
+        ]
+      );
       const orderId = orderRes.rows[0].order_id;
       for (const it of groupItems) {
         await client.query('INSERT INTO order_items (order_id, product_id, product_name, unit, quantity, unit_price, subtotal) VALUES ($1,$2,$3,$4,$5,$6,$7)', [orderId, it.product_id, it.name, it.unit, it.quantity, it.unit_price, it.subtotal]);
+        await client.query('UPDATE products SET stock_quantity = stock_quantity - $1 WHERE product_id = $2', [it.quantity, it.product_id]);
       }
+      const transactionCode = 'PAY-' + orderId + '-' + Date.now();
+      const paymentRes = await client.query(
+        `INSERT INTO payments (order_id, amount, method, status, transaction_code, gateway_name, paid_at, expired_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,CURRENT_TIMESTAMP + INTERVAL '24 hours')
+         RETURNING payment_id`,
+        [
+          orderId,
+          total,
+          normalizedPaymentMethod,
+          normalizedPaymentMethod === 'ONLINE' ? 'SUCCESS' : 'PENDING',
+          transactionCode,
+          normalizedPaymentMethod === 'ONLINE' ? 'BANK_TRANSFER' : 'COD',
+          normalizedPaymentMethod === 'ONLINE' ? new Date() : null
+        ]
+      );
       createdOrders.push(orderId);
+      createdPayments.push(paymentRes.rows[0].payment_id);
+      // record transaction mapping buyer->platform for this order when wallet flow used
+      if (normalizedPaymentMethod === 'ONLINE' && normalizedPaymentResult === 'SUCCESS' && buyerWallet && platformWallet) {
+        try {
+          await client.query(
+            `INSERT INTO transactions (from_wallet_id, to_wallet_id, order_id, amount, type, status, description, completed_at)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,CURRENT_TIMESTAMP)`,
+            [buyerWallet.wallet_id, platformWallet.wallet_id, orderId, total, 'PAYMENT', 'SUCCESS', 'Customer payment for order ' + orderId]
+          );
+        } catch (e) {
+          console.warn('Failed to insert payment transaction for order', orderId, e);
+        }
+      }
     }
 
-    // Clear cart
-    await client.query('DELETE FROM cart_items WHERE cart_id = $1', [cartId]);
+    // Clear paid items. If no selected ids are provided, clear the whole cart.
+    if (selectedIds.length > 0) {
+      await client.query('DELETE FROM cart_items WHERE cart_id = $1 AND cart_item_id = ANY($2::int[])', [cartId, selectedIds]);
+    } else {
+      await client.query('DELETE FROM cart_items WHERE cart_id = $1', [cartId]);
+    }
     await client.query('UPDATE carts SET total_price = 0, updated_at = CURRENT_TIMESTAMP WHERE cart_id = $1', [cartId]);
+    const totR = await client.query('SELECT COALESCE(SUM(subtotal),0) AS tot FROM cart_items WHERE cart_id = $1', [cartId]);
+    await client.query('UPDATE carts SET total_price = $1, updated_at = CURRENT_TIMESTAMP WHERE cart_id = $2', [totR.rows[0].tot || 0, cartId]);
 
     await client.query('COMMIT');
-    return res.json({ message: 'Checkout complete', orders: createdOrders });
+    return res.json({
+      message: 'Checkout complete',
+      orders: createdOrders,
+      payments: createdPayments,
+      paymentMethod: normalizedPaymentMethod
+    });
   } catch (err) {
     await client.query('ROLLBACK');
     console.error('POST /api/cart/checkout error', err);

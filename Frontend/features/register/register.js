@@ -111,8 +111,7 @@ document.getElementById('registerForm').addEventListener('submit', async functio
     licenseFile: null
   };
 
-  // allow overriding the API endpoint from the page (useful for local dev vs deployed)
-  const REGISTER_API_URL = window.REGISTER_API_URL || 'http://localhost:3001/api/auth/register';
+  const REGISTER_API_URL = 'http://localhost:3001/api/auth/register';
 
   // If vendor and a license file is selected, read it as base64 and include in JSON payload
   if (isVendor) {

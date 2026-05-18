@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hồ sơ - Nông Sản Sạch</title>
+  <link rel="stylesheet" href="../../css/style.css">
+</head>
+<body>
+  <div id="siteHeader"></div>
+
+  <div class="container" style="padding:24px 45px;">
+    <div style="display:flex; gap:24px; align-items:flex-start;">
+      <!-- Left column -->
+      <div style="width:280px;">
+        <div style="background:#fff; padding:20px; border-radius:6px; box-shadow:0 2px 6px rgba(0,0,0,0.06);">
+          <div style="display:flex; flex-direction:column; align-items:center; gap:12px; padding:12px 0;">
+            <div id="profileAvatar" style="width:120px; height:120px; border-radius:60px; background:#16A34A; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; font-size:36px;">NVA</div>
+            <div style="text-align:center;">
+              <div id="profileName" style="font-weight:700; font-size:18px; color:#111827;">Nguyễn Văn An</div>
+              <div id="profileEmail" style="color:#6B7280; font-size:13px;">nguyenvanan@email.com</div>
+            </div>
+          </div>
+
+          <div style="margin-top:12px;">
+            <button class="btn btn-success" style="width:100%;">Thông tin cá nhân</button>
+            <ul style="list-style:none; padding:12px 8px; margin:8px 0 0 0;">
+              <li style="padding:8px 6px; color:#111827; cursor:pointer;">Đơn hàng của tôi</li>
+              <li style="padding:8px 6px; color:#111827; cursor:pointer;">Địa chỉ nhận hàng</li>
+              <li style="padding:8px 6px; color:#111827; cursor:pointer;">Cài đặt tài khoản</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right column (profile form) -->
+      <div style="flex:1;">
+        <div style="background:#fff; padding:20px; border-radius:6px; box-shadow:0 2px 6px rgba(0,0,0,0.06);">
+          <h3 style="margin-top:0;">Thông tin cá nhân</h3>
+
+          <div style="display:flex; gap:16px;">
+            <div style="flex:1;">
+              <label>Họ và tên</label>
+              <input id="inpFullName" type="text" class="input" />
+            </div>
+            <div style="width:300px;">
+              <label>Email</label>
+              <input id="inpEmail" type="text" class="input" disabled />
+            </div>
+          </div>
+
+          <div style="display:flex; gap:16px; margin-top:12px;">
+            <div style="flex:1;">
+              <label>Số điện thoại</label>
+              <input id="inpPhone" type="text" class="input" />
+            </div>
+            <div style="width:300px;">
+              <label>Ngày tham gia</label>
+              <input id="inpCreatedAt" type="text" class="input" disabled />
+            </div>
+          </div>
+
+          <div style="margin-top:12px;">
+            <label>Địa chỉ</label>
+            <textarea id="inpAddress" class="input" rows="4"></textarea>
+          </div>
+
+          <div style="display:flex; gap:12px; margin-top:18px;">
+            <div style="flex:1; background:#F3F4F6; padding:18px; border-radius:6px; text-align:center;">
+              <div id="statOrders" style="color:#10B981; font-weight:700; font-size:20px;">0</div>
+              <div style="color:#6B7280;">Đơn hàng</div>
+            </div>
+            <div style="flex:1; background:#FDF7ED; padding:18px; border-radius:6px; text-align:center;">
+              <div id="statSpent" style="color:#D97706; font-weight:700; font-size:20px;">0 VNĐ</div>
+              <div style="color:#6B7280;">Tổng chi tiêu</div>
+            </div>
+            <div style="flex:1; background:#EEF2FF; padding:18px; border-radius:6px; text-align:center;">
+              <div id="statPoints" style="color:#2563EB; font-weight:700; font-size:20px;">0</div>
+              <div style="color:#6B7280;">Điểm tích lũy</div>
+            </div>
+          </div>
+
+          <div style="display:flex; gap:12px; margin-top:18px;">
+            <button id="btnSave" class="btn btn-success">Cập nhật thông tin</button>
+            <button id="btnChangePassword" class="btn btn-secondary">Đổi mật khẩu</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/env.js"></script>
+  <script src="../shared/frontend-env.js"></script>
+  <script src="../shared/data.js"></script>
+  <script src="../shared/header.js"></script>
+  <script src="./profile.js"></script>
+</body>
+</html>
