@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quản lý yêu cầu đổi/trả - Nông Sản Sạch</title>
+  <link rel="stylesheet" href="../../css/style.css">
+</head>
+<body>
+  <!-- Shared Header -->
+  <div id="siteHeader"></div>
+
+  <!-- Main Header -->
+  <div class="main-header">
+    <a href="../home/index.html" class="logo">
+      <div class="logo-icon">🌱</div>
+      <div class="logo-text">
+        <h1>Nông Sản Sạch</h1>
+        <p>Organic Marketplace</p>
+      </div>
+    </a>
+  </div>
+
+  <!-- Main Content -->
+  <div class="container" style="padding: 32px 0;">
+    <div class="card">
+      <div class="section-header">
+        <h1 class="section-title">↩️ Quản lý yêu cầu đổi/trả hàng</h1>
+      </div>
+
+      <!-- Status Filter -->
+      <div style="display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap;">
+        <button class="filter-btn active" onclick="filterByStatus(null)" style="background: #16A34A; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;">
+          Tất cả
+        </button>
+        <button class="filter-btn" onclick="filterByStatus('PENDING')" style="background: #F59E0B; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;">
+          Chờ xử lý
+        </button>
+        <button class="filter-btn" onclick="filterByStatus('APPROVED')" style="background: #10B981; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;">
+          Đã chấp nhận
+        </button>
+        <button class="filter-btn" onclick="filterByStatus('REJECTED')" style="background: #EF4444; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;">
+          Đã từ chối
+        </button>
+      </div>
+
+      <!-- Return Requests List -->
+      <div id="returnsList" style="margin-top: 24px;">
+        <div style="text-align: center; padding: 48px; color: #999;">Đang tải yêu cầu đổi/trả...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Review Return Request -->
+  <div id="reviewModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+    <div style="background: white; border-radius: 8px; padding: 32px; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: 0 4px 16px rgba(0,0,0,0.2);">
+      
+      <h2 style="margin-bottom: 24px;">Chi tiết yêu cầu đổi/trả</h2>
+
+      <div id="reviewContent"></div>
+
+      <div style="display: flex; gap: 12px; margin-top: 24px; justify-content: flex-end;">
+        <button onclick="closeReviewModal()" style="padding: 10px 20px; border: 1px solid #ddd; border-radius: 4px; background: #fff; cursor: pointer;">
+          Đóng
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Approve Return -->
+  <div id="approveModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1001; align-items: center; justify-content: center;">
+    <div style="background: white; border-radius: 8px; padding: 32px; max-width: 500px; width: 90%;">
+      
+      <h2 style="margin-bottom: 24px;">Chấp nhận yêu cầu đổi/trả</h2>
+
+      <div style="margin-bottom: 24px;">
+        <label style="display: block; margin-bottom: 8px; font-weight: bold;">Hình thức xử lý:</label>
+        <select id="actionType" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+          <option value="REFUND">Hoàn tiền</option>
+          <option value="EXCHANGE">Đổi hàng</option>
+        </select>
+      </div>
+
+      <div style="display: flex; gap: 12px; justify-content: flex-end;">
+        <button onclick="closeApproveModal()" style="padding: 10px 20px; border: 1px solid #ddd; border-radius: 4px; background: #fff; cursor: pointer;">
+          Hủy
+        </button>
+        <button onclick="submitApprove()" style="padding: 10px 20px; background: #10B981; color: white; border: none; border-radius: 4px; cursor: pointer;">
+          Chấp nhận
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Reject Return -->
+  <div id="rejectModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1001; align-items: center; justify-content: center;">
+    <div style="background: white; border-radius: 8px; padding: 32px; max-width: 500px; width: 90%;">
+      
+      <h2 style="margin-bottom: 24px;">Từ chối yêu cầu đổi/trả</h2>
+
+      <div style="margin-bottom: 24px;">
+        <label style="display: block; margin-bottom: 8px; font-weight: bold;">Lý do từ chối:</label>
+        <textarea id="rejectReason" placeholder="Nhập lý do từ chối..." style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; min-height: 100px; font-family: inherit;"></textarea>
+      </div>
+
+      <div style="display: flex; gap: 12px; justify-content: flex-end;">
+        <button onclick="closeRejectModal()" style="padding: 10px 20px; border: 1px solid #ddd; border-radius: 4px; background: #fff; cursor: pointer;">
+          Hủy
+        </button>
+        <button onclick="submitReject()" style="padding: 10px 20px; background: #EF4444; color: white; border: none; border-radius: 4px; cursor: pointer;">
+          Từ chối
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../shared/header.js"></script>
+  <script src="../shared/frontend-env.js"></script>
+  <script src="vendor-returns.js"></script>
+</body>
+</html>

@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quản lý đơn hàng - Nông Sản Sạch</title>
+  <link rel="stylesheet" href="../../css/style.css">
+  <style>
+    .status-tab {
+      display: inline-block;
+      padding: 8px 16px;
+      margin-right: 8px;
+      margin-bottom: 16px;
+      background: #f3f4f6;
+      border: 1px solid #e5e7eb;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 500;
+      color: #666;
+      transition: all 0.3s;
+    }
+
+    .status-tab.active {
+      background: #16A34A;
+      color: white;
+      border-color: #16A34A;
+    }
+
+    .order-card {
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .order-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      gap: 16px;
+      margin-bottom: 12px;
+    }
+
+    .order-status {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .status-pending {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .status-preparing {
+      background: #dbeafe;
+      color: #0c4a6e;
+    }
+
+    .status-shipping {
+      background: #e0e7ff;
+      color: #3730a3;
+    }
+
+    .status-delivered {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .order-items {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid #e5e7eb;
+    }
+
+    .order-item {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 8px;
+      font-size: 14px;
+      color: #666;
+    }
+
+    .btn-action {
+      padding: 8px 12px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: bold;
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: #16A34A;
+      color: white;
+    }
+
+    .btn-secondary {
+      background: #e5e7eb;
+      color: #333;
+    }
+
+    .btn-disabled {
+      background: #f3f4f6;
+      color: #999;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+  <!-- Shared Header -->
+  <div id="siteHeader"></div>
+
+  <!-- Main Header -->
+  <div class="main-header">
+    <a href="../home/index.html" class="logo">
+      <div class="logo-icon">🌱</div>
+      <div class="logo-text">
+        <h1>Nông Sản Sạch</h1>
+        <p>Organic Marketplace</p>
+      </div>
+    </a>
+  </div>
+
+  <!-- Main Content -->
+  <div class="container" style="padding: 32px 0;">
+    <div class="card" style="margin-bottom: 24px;">
+      <div class="section-header">
+        <h1 class="section-title">📦 Quản lý đơn hàng từ khách hàng</h1>
+      </div>
+
+      <!-- Status Filter -->
+      <div style="margin-bottom: 24px;">
+        <div style="margin-bottom: 8px; color: #666; font-size: 14px;">Lọc theo trạng thái:</div>
+        <button class="status-tab active" onclick="filterByStatus(null)">Tất cả</button>
+        <button class="status-tab" onclick="filterByStatus('PENDING')">Chờ xử lý</button>
+        <button class="status-tab" onclick="filterByStatus('PREPARING')">Đang chuẩn bị</button>
+        <button class="status-tab" onclick="filterByStatus('SHIPPING')">Đang giao</button>
+        <button class="status-tab" onclick="filterByStatus('DELIVERED')">Đã giao</button>
+      </div>
+
+      <!-- Orders List -->
+      <div id="ordersList" style="color: #999;">Đang tải...</div>
+
+      <!-- Empty State -->
+      <div id="emptyState" style="display: none; text-align: center; padding: 48px; color: #999;">
+        <div style="font-size: 48px; margin-bottom: 16px;">📭</div>
+        <div style="font-size: 18px; margin-bottom: 8px;">Không có đơn hàng</div>
+        <div style="font-size: 14px;">Chưa có đơn hàng nào ở trạng thái này</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Update Status -->
+  <div id="updateStatusModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+    <div style="background: white; border-radius: 8px; padding: 32px; max-width: 500px; width: 90%;">
+      
+      <h2 style="margin-bottom: 24px;">Cập nhật trạng thái đơn hàng</h2>
+
+      <div id="updateStatusContent" style="margin-bottom: 24px;">
+        <div id="updateOrderInfo" style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #e5e7eb;"></div>
+        <div style="margin-bottom: 16px;">
+          <label style="display: block; margin-bottom: 8px; font-weight: bold;">Trạng thái mới:</label>
+          <select id="newStatus" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+            <option value="PREPARING">Đang chuẩn bị</option>
+            <option value="SHIPPING">Đang giao</option>
+            <option value="DELIVERED">Đã giao</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 12px; justify-content: flex-end;">
+        <button onclick="closeUpdateStatusModal()" style="padding: 10px 20px; border: 1px solid #ddd; border-radius: 4px; background: #fff; cursor: pointer;">
+          Hủy
+        </button>
+        <button onclick="submitUpdateStatus()" style="padding: 10px 20px; background: #16A34A; color: white; border: none; border-radius: 4px; cursor: pointer;">
+          Cập nhật
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../shared/header.js"></script>
+  <script src="../shared/frontend-env.js"></script>
+  <script src="vendor-order-management.js"></script>
+</body>
+</html>

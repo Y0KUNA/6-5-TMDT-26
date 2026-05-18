@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Yêu cầu đổi/trả hàng - Nông Sản Sạch</title>
+  <link rel="stylesheet" href="../../css/style.css">
+</head>
+<body>
+  <!-- Shared Header -->
+  <div id="siteHeader"></div>
+
+  <!-- Main Header -->
+  <div class="main-header">
+    <a href="../home/index.html" class="logo">
+      <div class="logo-icon">🌱</div>
+      <div class="logo-text">
+        <h1>Nông Sản Sạch</h1>
+        <p>Organic Marketplace</p>
+      </div>
+    </a>
+  </div>
+
+  <!-- Main Content -->
+  <div class="container" style="padding: 32px 0;">
+    <div class="card">
+      <div class="section-header" style="border-bottom: none;">
+        <h1 class="section-title">↩️ Tạo yêu cầu đổi/trả</h1>
+        <p style="margin-top: 8px; color: #666; font-size: 14px;">Gửi yêu cầu đổi hàng hoặc hoàn tiền cho doanh nghiệp</p>
+      </div>
+
+      <!-- Form Container -->
+      <div style="max-width: 600px;">
+        
+        <!-- Order Selection -->
+        <div style="margin-bottom: 24px;">
+          <label style="display: block; margin-bottom: 8px; font-weight: bold;">Chọn đơn hàng:</label>
+          <select id="orderSelect" onchange="updateOrderDetails()" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+            <option value="">-- Chọn đơn hàng --</option>
+          </select>
+        </div>
+
+        <!-- Order Details Display -->
+        <div id="orderDetailsContainer" style="display: none; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+          <h3 style="margin-bottom: 12px;">Chi tiết đơn hàng</h3>
+          <div id="orderDetails"></div>
+        </div>
+
+        <!-- Return Type -->
+        <div style="margin-bottom: 24px;">
+          <label style="display: block; margin-bottom: 8px; font-weight: bold;">Loại yêu cầu:</label>
+          <div style="display: flex; gap: 16px;">
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+              <input type="radio" name="returnType" value="EXCHANGE"> Đổi hàng
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+              <input type="radio" name="returnType" value="REFUND"> Hoàn tiền
+            </label>
+          </div>
+        </div>
+
+        <!-- Reason -->
+        <div style="margin-bottom: 24px;">
+          <label style="display: block; margin-bottom: 8px; font-weight: bold;">Lý do:</label>
+          <textarea id="reason" placeholder="Mô tả chi tiết lý do yêu cầu đổi/trả hàng..." style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; min-height: 120px; font-family: inherit;"></textarea>
+        </div>
+
+        <!-- Evidence Images -->
+        <div style="margin-bottom: 24px;">
+          <label style="display: block; margin-bottom: 8px; font-weight: bold;">Ảnh minh chứng (tùy chọn):</label>
+          <input type="file" id="evidenceImage" accept="image/*" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+          <small style="color: #666; display: block; margin-top: 8px;">Khuyến nghị: Gửi ảnh minh chứng để tăng tỷ lệ được chấp nhận</small>
+        </div>
+
+        <!-- Notes -->
+        <div style="margin-bottom: 24px;">
+          <label style="display: block; margin-bottom: 8px; font-weight: bold;">Ghi chú thêm (tùy chọn):</label>
+          <textarea id="note" placeholder="Thông tin thêm..." style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; min-height: 80px; font-family: inherit;"></textarea>
+        </div>
+
+        <!-- Submit Button -->
+        <div style="display: flex; gap: 12px; justify-content: flex-end;">
+          <button onclick="resetForm()" style="padding: 10px 20px; border: 1px solid #ddd; border-radius: 4px; background: #fff; cursor: pointer;">
+            Nhập lại
+          </button>
+          <button onclick="submitReturnRequest()" style="padding: 10px 20px; background: #16A34A; color: white; border: none; border-radius: 4px; cursor: pointer;">
+            Gửi yêu cầu
+          </button>
+        </div>
+      </div>
+
+      <!-- Recent Requests -->
+      <div style="margin-top: 48px; border-top: 2px solid #e5e7eb; padding-top: 24px;">
+        <h2 style="margin-bottom: 24px; font-size: 20px;">Yêu cầu đổi/trả gần đây của bạn</h2>
+        <div id="recentRequests" style="color: #999;">Đang tải...</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../shared/header.js"></script>
+  <script src="../shared/frontend-env.js"></script>
+  <script src="customer-return-request.js"></script>
+</body>
+</html>

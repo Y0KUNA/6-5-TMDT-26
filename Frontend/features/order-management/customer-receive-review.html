@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nhận hàng & Đánh giá - Nông Sản Sạch</title>
+  <link rel="stylesheet" href="../../css/style.css">
+</head>
+<body>
+  <!-- Shared Header -->
+  <div id="siteHeader"></div>
+
+  <!-- Main Header -->
+  <div class="main-header">
+    <a href="../home/index.html" class="logo">
+      <div class="logo-icon">🌱</div>
+      <div class="logo-text">
+        <h1>Nông Sản Sạch</h1>
+        <p>Organic Marketplace</p>
+      </div>
+    </a>
+  </div>
+
+  <!-- Main Content -->
+  <div class="container" style="padding: 32px 0;">
+    <div class="card">
+      <div class="section-header">
+        <h1 class="section-title">⭐ Nhận hàng & Đánh giá sản phẩm</h1>
+      </div>
+
+      <!-- Delivered Orders Tab -->
+      <div style="margin-bottom: 32px;">
+        <h2 style="margin-bottom: 16px; font-size: 20px;">Đơn hàng đã giao</h2>
+        <div id="deliveredOrdersList" style="color: #999;">Đang tải...</div>
+      </div>
+
+      <!-- Completed Orders Tab -->
+      <div style="border-top: 2px solid #e5e7eb; padding-top: 32px;">
+        <h2 style="margin-bottom: 16px; font-size: 20px;">Đơn hàng đã hoàn thành</h2>
+        <div id="completedOrdersList" style="color: #999;">Đang tải...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Confirm Received -->
+  <div id="confirmReceivedModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+    <div style="background: white; border-radius: 8px; padding: 32px; max-width: 500px; width: 90%;">
+      
+      <h2 style="margin-bottom: 24px;">Xác nhận đã nhận hàng</h2>
+      <p style="margin-bottom: 24px; color: #666;">Bạn có chắc chắn là đã nhận được tất cả sản phẩm trong đơn hàng này chưa?</p>
+
+      <div style="display: flex; gap: 12px; justify-content: flex-end;">
+        <button onclick="closeConfirmReceivedModal()" style="padding: 10px 20px; border: 1px solid #ddd; border-radius: 4px; background: #fff; cursor: pointer;">
+          Hủy
+        </button>
+        <button onclick="submitConfirmReceived()" style="padding: 10px 20px; background: #16A34A; color: white; border: none; border-radius: 4px; cursor: pointer;">
+          Xác nhận đã nhận
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Review Product -->
+  <div id="reviewModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+    <div style="background: white; border-radius: 8px; padding: 32px; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto;">
+      
+      <h2 style="margin-bottom: 24px;">Đánh giá sản phẩm</h2>
+
+      <div id="reviewContent" style="margin-bottom: 24px;">
+        <div id="reviewProductInfo"></div>
+      </div>
+
+      <!-- Rating -->
+      <div style="margin-bottom: 24px;">
+        <label style="display: block; margin-bottom: 12px; font-weight: bold;">Đánh giá:</label>
+        <div style="display: flex; gap: 8px; font-size: 32px;">
+          <span onclick="setRating(1)" style="cursor: pointer; color: #ddd;" class="star" data-rating="1">★</span>
+          <span onclick="setRating(2)" style="cursor: pointer; color: #ddd;" class="star" data-rating="2">★</span>
+          <span onclick="setRating(3)" style="cursor: pointer; color: #ddd;" class="star" data-rating="3">★</span>
+          <span onclick="setRating(4)" style="cursor: pointer; color: #ddd;" class="star" data-rating="4">★</span>
+          <span onclick="setRating(5)" style="cursor: pointer; color: #ddd;" class="star" data-rating="5">★</span>
+        </div>
+        <div id="ratingText" style="margin-top: 8px; color: #666; font-size: 14px;"></div>
+      </div>
+
+      <!-- Comment -->
+      <div style="margin-bottom: 24px;">
+        <label style="display: block; margin-bottom: 8px; font-weight: bold;">Bình luận:</label>
+        <textarea id="reviewComment" placeholder="Chia sẻ trải nghiệm của bạn..." style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; min-height: 100px; font-family: inherit;"></textarea>
+        <small style="color: #666; display: block; margin-top: 8px;" id="reviewCharCount">0 / 500 ký tự</small>
+      </div>
+
+      <div style="display: flex; gap: 12px; justify-content: flex-end;">
+        <button onclick="closeReviewModal()" style="padding: 10px 20px; border: 1px solid #ddd; border-radius: 4px; background: #fff; cursor: pointer;">
+          Hủy
+        </button>
+        <button onclick="submitReview()" style="padding: 10px 20px; background: #16A34A; color: white; border: none; border-radius: 4px; cursor: pointer;">
+          Gửi đánh giá
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../shared/header.js"></script>
+  <script src="../shared/frontend-env.js"></script>
+  <script src="customer-receive-review.js"></script>
+</body>
+</html>

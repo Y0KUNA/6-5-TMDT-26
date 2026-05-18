@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quản lý giao hàng - Nông Sản Sạch</title>
+  <link rel="stylesheet" href="../../css/style.css">
+  <style>
+    .shipment-card {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      border-top: 3px solid #22c55e;
+    }
+
+    .shipment-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+      font-size: 14px;
+    }
+
+    .shipment-info-item {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .shipment-info-label {
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 4px;
+    }
+
+    .shipment-info-value {
+      color: #666;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    /* Section Header Green Accent */
+    .section-header {
+      border-left: 4px solid #16a34a !important;
+      padding-left: 12px;
+    }
+
+    .status-waiting { background: #fef3c7; color: #92400e; }
+    .status-picked_up { background: #dbeafe; color: #0c4a6e; }
+    .status-delivering { background: #fce7f3; color: #831843; }
+    .status-delivered { background: #dcfce7; color: #166534; }
+    .status-failed { background: #fee2e2; color: #7f1d1d; }
+
+    .action-buttons {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    .btn-sm {
+      padding: 8px 16px;
+      font-size: 13px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    .btn-accept {
+      background: #22c55e;
+      color: white;
+    }
+
+    .btn-accept:hover {
+      background: #16a34a;
+      opacity: 0.9;
+    }
+
+    .btn-next {
+      background: #22c55e;
+      color: white;
+    }
+
+    .btn-next:hover {
+      background: #16a34a;
+      opacity: 0.9;
+    }
+
+    .btn-fail {
+      background: #ef4444;
+      color: white;
+    }
+
+    .btn-fail:hover {
+      background: #dc2626;
+      opacity: 0.9;
+    }
+
+    /* Tab Navigation */
+    .tabs {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+      border-bottom: 2px solid #e5e7eb;
+    }
+
+    .tab-btn {
+      padding: 12px 24px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: 500;
+      color: #999;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      transition: all 0.3s;
+    }
+
+    .tab-btn:hover {
+      color: #666;
+    }
+
+    .tab-btn.active {
+      color: #16a34a;
+      border-bottom-color: #16a34a;
+      font-weight: 600;
+      background: #f0fdf4;
+      border-radius: 4px 4px 0 0;
+      margin-left: -8px;
+      margin-right: -8px;
+      padding-left: 32px;
+      padding-right: 32px;
+    }
+
+    .tab-content { 
+      display: none; 
+    }
+
+    .tab-content.active { 
+      display: block; 
+    }
+
+    /* Modal Styles */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: white;
+      border-radius: 8px;
+      padding: 32px;
+      max-width: 500px;
+      width: 90%;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    }
+
+    .modal-header {
+      border-bottom: 1px solid #e5e7eb;
+      padding-bottom: 16px;
+      margin-bottom: 16px;
+      border-left: 3px solid #16a34a;
+      padding-left: 12px;
+    }
+
+    .modal-header h2 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 600;
+      color: #16a34a;
+    }
+
+    .modal-footer {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+      margin-top: 24px;
+    }
+
+    .modal-footer button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    .modal-footer .btn-cancel {
+      background: #f3f4f6;
+      color: #1f2937;
+      border: 1px solid #e5e7eb;
+    }
+
+    .modal-footer .btn-cancel:hover {
+      background: #e5e7eb;
+    }
+
+    .modal-footer .btn-confirm {
+      background: #22c55e;
+      color: white;
+    }
+
+    .modal-footer .btn-confirm:hover {
+      background: #16a34a;
+    }
+
+    .modal-footer .btn-danger {
+      background: #ef4444;
+      color: white;
+    }
+
+    .modal-footer .btn-danger:hover {
+      background: #dc2626;
+    }
+  </style>
+</head>
+<body>
+  <!-- Shared Header -->
+  <div id="siteHeader"></div>
+
+  <!-- Main Header -->
+  <div class="main-header">
+    <a href="../home/index.html" class="logo">
+      <div class="logo-icon">🌱</div>
+      <div class="logo-text">
+        <h1>Nông Sản Sạch</h1>
+        <p>Organic Marketplace</p>
+      </div>
+    </a>
+  </div>
+
+  <!-- Main Content -->
+  <div class="container" style="padding: 32px 0;">
+    <div class="card">
+      <div class="section-header">
+        <h1 class="section-title">🚚 Quản lý giao hàng</h1>
+        <p style="margin-top: 8px; color: #666; font-size: 14px;">Nhận và cập nhật trạng thái giao hàng</p>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('available', this)">Đơn chờ nhận</button>
+        <button class="tab-btn" onclick="switchTab('assigned', this)">Đơn của tôi</button>
+      </div>
+
+      <!-- Available Shipments Tab -->
+      <div id="available" class="tab-content active">
+        <div id="availableList">Đang tải...</div>
+      </div>
+
+      <!-- Assigned Shipments Tab -->
+      <div id="assigned" class="tab-content">
+        <div id="shipmentsList">Đang tải...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Accept Shipment -->
+  <div id="acceptModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Xác nhận nhận đơn hàng</h2>
+      </div>
+      <div id="acceptContent" style="margin-bottom: 24px;"></div>
+      <div class="modal-footer">
+        <button class="btn-cancel" onclick="closeAcceptModal()">Hủy</button>
+        <button class="btn-confirm" onclick="confirmAccept()">Nhận đơn</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Failure Reason -->
+  <div id="failureModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Lý do giao thất bại</h2>
+      </div>
+      <div style="margin-bottom: 24px;">
+        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">Mô tả vấn đề:</label>
+        <textarea id="failureReason" class="form-textarea" placeholder="Ví dụ: Khách không có nhà, yêu cầu gọi lại..."></textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" onclick="closeFailureModal()">Hủy</button>
+        <button class="btn-danger" onclick="confirmFailure()">Xác nhận thất bại</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../shared/header.js"></script>
+  <script src="../shared/frontend-env.js"></script>
+  <script src="shipper-shipments.js"></script>
+</body>
+</html>

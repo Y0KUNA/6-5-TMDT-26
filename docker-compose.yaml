@@ -1,0 +1,10 @@
+services:
+    postgres_tmdt:
+        image: postgres:15.3
+        container_name: postgres_tmdt
+        environment:
+            POSTGRES_USER: postgres
+            POSTGRES_PASSWORD: 12345678
+            POSTGRES_DB: ECommerce
+        ports:
+            - "5433:5432"

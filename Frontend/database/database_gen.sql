@@ -1,3 +1,5 @@
+-- Active: 1776659200081@@127.0.0.1@5433@ECommerce
+-- Active: 1775530059812@@127.0.0.1@5432
 -- ============================================================
 --  SÀN THƯƠNG MẠI ĐIỆN TỬ BÁN NÔNG SẢN
 --  Database: nong_san_ecommerce
@@ -9,7 +11,7 @@
 -- DROP DATABASE IF EXISTS nong_san_ecommerce;
 -- CREATE DATABASE nong_san_ecommerce ENCODING 'UTF8';
 -- \c nong_san_ecommerce
-SELECT NOW()
+SELECT NOW();
 ALTER USER postgres WITH PASSWORD '12345678';
 -- ============================================================
 -- ENUM TYPES
@@ -646,7 +648,7 @@ INSERT INTO categories (parent_id, name, description) VALUES
     (2, 'Trái cây múi',         'Cam, bưởi, quýt...');
 
 -- ── Admin ─────────────────────────────────────────────────
-DO $$
+DO $BODY$
 DECLARE
     v_admin_id INT;
 BEGIN
@@ -656,10 +658,11 @@ BEGIN
     RETURNING user_id INTO v_admin_id;
 
     INSERT INTO admins (admin_id, admin_level) VALUES (v_admin_id, 1);
-END $$;
+END
+$BODY$;
 
 -- ── Doanh nghiệp mẫu ──────────────────────────────────────
-DO $$
+DO $BODY$
 DECLARE
     v_eid1 INT;
 BEGIN
@@ -675,10 +678,11 @@ BEGIN
         (enterprise_id, business_name, address, license_file, tax_code, status, reviewed_at)
     VALUES (v_eid1, 'Nông trại Xanh Sạch', 'Đà Lạt, Lâm Đồng',
             '/uploads/licenses/farm_green.pdf', '1234567890', 'APPROVED', NOW());
-END $$;
+END
+$BODY$;
 
 -- ── Khách hàng mẫu ────────────────────────────────────────
-DO $$
+DO $BODY$
 DECLARE
     v_cid1 INT;
     v_cid2 INT;
@@ -700,10 +704,11 @@ BEGIN
     INSERT INTO customers (customer_id, address)
     VALUES (v_cid2, '456 Lê Lợi, Q.3, TP.HCM');
     INSERT INTO carts (customer_id) VALUES (v_cid2);
-END $$;
+END
+$BODY$;
 
 -- ── Shipper mẫu ───────────────────────────────────────────
-DO $$
+DO $BODY$
 DECLARE
     v_shid1 INT;
 BEGIN
@@ -714,10 +719,11 @@ BEGIN
 
     INSERT INTO shippers (shipper_id, shipper_code, company)
     VALUES (v_shid1, 'GHN-001', 'Giao Hàng Nhanh');
-END $$;
+END
+$BODY$;
 
 -- ── Sản phẩm, đơn hàng, đánh giá, khuyến mãi, thông báo mẫu ──
-DO $$
+DO $BODY$
 DECLARE
     v_eid1  INT;
     v_cid1  INT;
@@ -856,7 +862,8 @@ BEGIN
         (v_eid1, 'Yêu cầu duyệt khuyến mãi',
          'Chương trình Giảm giá Hè 2026 đang chờ admin phê duyệt.',
          'PROMOTION');
-END $$;
+END
+$BODY$;
 
 
 -- ============================================================

@@ -55,6 +55,20 @@ router.post('/:productId', async (req, res) => {
     const userId = req.userId || null;
     if (Number.isNaN(pid) || !rating) return res.status(400).json({ error: 'Invalid request' });
     if (!userId) return res.status(401).json({ error: 'Authentication required' });
+    
+    // Verify user has purchased this product
+    const purchaseCheck = await db.query(
+      `SELECT COUNT(*) FROM order_items oi 
+       JOIN orders o ON o.order_id = oi.order_id 
+       WHERE o.customer_id = $1 AND oi.product_id = $2 
+       AND o.status IN ('SHIPPED', 'DELIVERED', 'COMPLETED')`,
+      [userId, pid]
+    );
+    
+    if (purchaseCheck.rows[0].count === '0') {
+      return res.status(403).json({ error: 'Forbidden - you must purchase this product to review it' });
+    }
+    
     await ensureTable();
     const ins = await db.query('INSERT INTO product_reviews (product_id, user_id, rating, comment) VALUES ($1,$2,$3,$4) RETURNING review_id', [pid, userId, rating, comment || null]);
     return res.json({ ok: true, reviewId: ins.rows[0].review_id });

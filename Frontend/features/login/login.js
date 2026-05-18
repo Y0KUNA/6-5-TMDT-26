@@ -1,5 +1,8 @@
 // Login page functionality (moved from js/login.js)
 
+// Debug: kiểm tra dataManager đã load chưa
+console.log('[login.js] dataManager:', typeof dataManager, typeof dataManager !== 'undefined' ? dataManager.login : 'NOT LOADED');
+
 // Handle login form submit
 document.getElementById('loginForm')?.addEventListener('submit', async function (e) {
   e.preventDefault();
@@ -10,7 +13,7 @@ document.getElementById('loginForm')?.addEventListener('submit', async function 
 
   // Try server-side login first
   try {
-  const resp = await fetch('http://localhost:3001/api/auth/login', {
+    const resp = await fetch('http://localhost:3001/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })
@@ -18,23 +21,27 @@ document.getElementById('loginForm')?.addEventListener('submit', async function 
 
     if (resp.ok) {
       const data = await resp.json();
-      // store token
       localStorage.setItem('authToken', data.token);
       if (data.user) {
         localStorage.setItem('currentUser', JSON.stringify(data.user));
       }
       alert('Đăng nhập thành công!');
-      // TODO: fetch user profile if needed
       window.location.href = '../home/index.html';
       return;
     }
   } catch (err) {
-    // server may be down; fall back to local data
+    // Server chưa chạy, fallback về local data
     console.warn('Auth server unreachable, falling back to local data:', err);
   }
 
-  // Fallback: local in-browser auth (existing behavior)
-  let user = (typeof dataManager !== 'undefined') ? dataManager.login(email, password) : null;
+  // Fallback: local in-browser auth
+  let user = null;
+
+  if (typeof dataManager !== 'undefined' && typeof dataManager.login === 'function') {
+    user = dataManager.login(email, password);
+  } else {
+    console.error('[login.js] dataManager.login không tồn tại. Kiểm tra lại data.js đã được load chưa.');
+  }
 
   if (!user && typeof businessManager !== 'undefined') {
     const businessUser = businessManager.getAllBusinessUsers().find(
@@ -42,7 +49,7 @@ document.getElementById('loginForm')?.addEventListener('submit', async function 
     );
 
     if (businessUser) {
-      const { password, ...userWithoutPassword } = businessUser;
+      const { password: _, ...userWithoutPassword } = businessUser;
       localStorage.setItem('currentUser', JSON.stringify(userWithoutPassword));
       user = userWithoutPassword;
     }

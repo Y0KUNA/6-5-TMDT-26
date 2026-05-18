@@ -83,6 +83,7 @@
         } else {
           const role = (user.role || '').toLowerCase();
           const isSeller = role === 'enterprise' || role === 'vendor' || role === 'business';
+          const isShipper = role === 'shipper';
 
           // If seller, show Dashboard link first
           if (isSeller) {
@@ -97,6 +98,34 @@
             productManage.textContent = 'Quản lý sản phẩm';
             productManage.style.cssText = 'display: block; padding: 12px 16px; color: #333; text-decoration: none; border-bottom: 1px solid #E5E7EB;';
             dropdown.appendChild(productManage);
+
+            // UC12: Vendor order management
+            const vendorOrders = document.createElement('a');
+            vendorOrders.href = '../order-management/vendor-order-management.html';
+            vendorOrders.textContent = '📦 Quản lý đơn hàng';
+            vendorOrders.style.cssText = 'display: block; padding: 12px 16px; color: #333; text-decoration: none; border-bottom: 1px solid #E5E7EB;';
+            dropdown.appendChild(vendorOrders);
+
+            // UC13: Vendor returns management
+            const vendorReturns = document.createElement('a');
+            vendorReturns.href = '../order-management/vendor-returns.html';
+            vendorReturns.textContent = '↩️ Quản lý yêu cầu đổi/trả';
+            vendorReturns.style.cssText = 'display: block; padding: 12px 16px; color: #333; text-decoration: none; border-bottom: 1px solid #E5E7EB;';
+            dropdown.appendChild(vendorReturns);
+
+            const shipmentsLink = document.createElement('a');
+            shipmentsLink.href = '../shipment/vendor-shipments.html';
+            shipmentsLink.textContent = 'Trạng thái vận chuyển';
+            shipmentsLink.style.cssText = 'display: block; padding: 12px 16px; color: #333; text-decoration: none; border-bottom: 1px solid #E5E7EB;';
+            dropdown.appendChild(shipmentsLink);
+          }
+
+          if (isShipper) {
+            const shipperLink = document.createElement('a');
+            shipperLink.href = '../shipment/shipper-shipments.html';
+            shipperLink.textContent = 'Quản lý giao hàng';
+            shipperLink.style.cssText = 'display: block; padding: 12px 16px; color: #333; text-decoration: none; border-bottom: 1px solid #E5E7EB;';
+            dropdown.appendChild(shipperLink);
           }
 
           const profile = document.createElement('a');
@@ -109,8 +138,29 @@
           orders.textContent = 'Quản lý đơn hàng';
           orders.style.cssText = 'display: block; padding: 12px 16px; color: #333; text-decoration: none; border-bottom: 1px solid #E5E7EB;';
 
+          // UC7: Customer receive & review
+          const receiveReview = document.createElement('a');
+          receiveReview.href = '../order-management/customer-receive-review.html';
+          receiveReview.textContent = '⭐ Nhận hàng & Đánh giá';
+          receiveReview.style.cssText = 'display: block; padding: 12px 16px; color: #333; text-decoration: none; border-bottom: 1px solid #E5E7EB;';
+
+          // UC8: Customer return request
+          const returnRequest = document.createElement('a');
+          returnRequest.href = '../cart/customer-return-request.html';
+          returnRequest.textContent = '↩️ Yêu cầu đổi/trả';
+          returnRequest.style.cssText = 'display: block; padding: 12px 16px; color: #333; text-decoration: none; border-bottom: 1px solid #E5E7EB;';
+
+          // UC9: Customer track orders
+          const trackOrders = document.createElement('a');
+          trackOrders.href = '../shipment/track.html';
+          trackOrders.textContent = '📍 Theo dõi đơn hàng';
+          trackOrders.style.cssText = 'display: block; padding: 12px 16px; color: #333; text-decoration: none; border-bottom: 1px solid #E5E7EB;';
+
           dropdown.appendChild(profile);
           dropdown.appendChild(orders);
+          dropdown.appendChild(receiveReview);
+          dropdown.appendChild(returnRequest);
+          dropdown.appendChild(trackOrders);
         }
 
         const logout = document.createElement('a');

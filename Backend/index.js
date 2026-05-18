@@ -3,6 +3,8 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const bodyParser = require('body-parser');
+const path = require('path');
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -13,7 +15,6 @@ app.use(
   })
 );
 app.use(cors());
-// increase JSON/body size limit to allow base64 file uploads inside JSON
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
 
@@ -26,16 +27,25 @@ app.use((err, req, res, next) => {
 });
 
 // route modules
-const authRoutes = require('./routes/auth');
-const productRoutes = require('./routes/products');
+const authRoutes     = require('./routes/auth');
+const productRoutes  = require('./routes/products');
+const orderRoutes    = require('./routes/orders');
+const shipmentRoutes = require('./routes/shipments');
+const cartRoutes     = require('./routes/cart');
+const vendorRoutes   = require('./routes/vendors');
+const reviewRoutes   = require('./routes/reviews');
+const profileRoutes  = require('./routes/profile');
 
-const path = require('path');
+app.use('/api/auth',      authRoutes);
+app.use('/api/products',  productRoutes);
+app.use('/api/orders',    orderRoutes);
+app.use('/api/shipments', shipmentRoutes);
+app.use('/api/cart',      cartRoutes);
+app.use('/api/vendors',   vendorRoutes);
+app.use('/api/reviews',   reviewRoutes);
+app.use('/api/profile',   profileRoutes);
 
-app.use('/api/auth', authRoutes);
-app.use('/api/products', productRoutes);
-
-
-// serve uploaded files statically (files saved by register endpoint)
+// serve uploaded files statically
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.get('/api/ping', (req, res) => res.json({ ok: true, ts: Date.now() }));
