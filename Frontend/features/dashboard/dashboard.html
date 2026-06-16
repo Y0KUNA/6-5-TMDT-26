@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Dashboard Người Bán - Nông Sản Sạch</title>
+  <link rel="stylesheet" href="../../css/style.css">
+  <style>
+    /* Minimal dashboard styles to match mock layout */
+    .dashboard-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; }
+    .card { background: #fff; border: 1px solid #E5E7EB; border-radius: 8px; padding: 16px; }
+    .card.big { grid-column: span 9; min-height: 320px; }
+    .card.side { grid-column: span 3; }
+    .metrics { display:flex; gap:16px; }
+    .metric { flex:1; background:#fff; border-radius:8px; padding:16px; border:1px solid #E5E7EB; }
+    .metric .value { font-size:20px; font-weight:700; }
+    .metric .label { color:#666; margin-top:6px; }
+    .top-list { list-style:none; padding:0; margin:0; }
+    .top-list li { padding:8px 0; border-bottom:1px dashed #F1F5F9; }
+  </style>
+</head>
+<body>
+  <div id="siteHeader"></div>
+
+  <div class="container mt-24">
+    <h1 style="font-size:22px; margin-bottom:8px;">Dashboard Người Bán</h1>
+    <p style="color:#666; margin-bottom:16px">Tổng quan doanh thu và quản lý cửa hàng của bạn</p>
+
+    <div class="metrics" style="margin-bottom:20px">
+      <div class="metric card" id="metric-revenue">
+        <div style="color:#16A34A; font-weight:700">Doanh thu tháng này</div>
+        <div class="value" id="revenue-value">₫0</div>
+        <div class="label" id="revenue-diff">—</div>
+      </div>
+
+      <div class="metric card" id="metric-new-orders">
+        <div style="color:#F59E0B; font-weight:700">Đơn hàng mới</div>
+        <div class="value" id="new-orders-count">0</div>
+        <div class="label" id="new-orders-note">—</div>
+      </div>
+
+      <div class="metric card" id="metric-products">
+        <div style="color:#10B981; font-weight:700">Sản phẩm đang bán</div>
+        <div class="value" id="products-count">0</div>
+        <div class="label" id="products-note">—</div>
+      </div>
+
+      <div class="metric card" id="metric-rating">
+        <div style="color:#FBBF24; font-weight:700">Đánh giá trung bình</div>
+        <div class="value" id="avg-rating">—</div>
+        <div class="label" id="rating-count">—</div>
+      </div>
+    </div>
+
+    <div class="dashboard-grid">
+      <div class="card big" id="chart-area">
+        <h3>Biểu Đồ Doanh Thu</h3>
+        <div id="chart-placeholder" style="height:300px; display:flex; align-items:center; justify-content:center; color:#999;">(Biểu đồ sẽ hiển thị ở đây)</div>
+      </div>
+
+      <div class="card side">
+        <h3>Top Sản Phẩm Bán Chạy</h3>
+        <ol class="top-list" id="top-products"></ol>
+      </div>
+
+      <div class="card" style="grid-column: span 6;">
+        <h3>Doanh Thu Theo Sản Phẩm</h3>
+        <div id="revenue-by-product">(Bảng doanh thu theo sản phẩm)</div>
+      </div>
+
+      <div class="card" style="grid-column: span 6;">
+        <h3>Đơn Hàng Gần Đây</h3>
+        <div id="recent-orders">(Danh sách đơn hàng mới)</div>
+      </div>
+
+      <div class="card" style="grid-column: span 12;">
+        <h3>Chi Tiết Sản Phẩm Bán Chạy</h3>
+        <div id="top-products-detail">(Bảng chi tiết)</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../shared/data.js"></script>
+  <script src="../shared/header.js"></script>
+  <script src="./dashboard.js"></script>
+</body>
+</html>

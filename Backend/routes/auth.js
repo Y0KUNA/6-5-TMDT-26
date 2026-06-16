@@ -10,11 +10,13 @@ const router = express.Router();
 
 const JWT_SECRET = process.env.JWT_SECRET || 'change_me';
 const SESSION_TTL_DAYS = parseInt(process.env.SESSION_DAYS || '7', 10);
+const VERIFY_TOKEN_TTL_MINUTES = parseInt(process.env.PASSWORD_RESET_TTL_MINUTES || '60', 10);
 
 // POST /api/auth/register
 router.post('/register', async (req, res) => {
   const { role, fullName, email, phone, password, address, businessName, businessAddress, taxCode, licenseFile } = req.body;
-
+  console.log('BODY:', req.body);
+  console.log('licenseFile length:', licenseFile?.length);
   if (!role || !fullName || !email || !phone || !password) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
@@ -40,6 +42,15 @@ router.post('/register', async (req, res) => {
 
     if (role === 'customer') {
       await client.query('INSERT INTO customers (customer_id, address) VALUES ($1,$2)', [userId, address || null]);
+      // create wallet for customer if not exists
+      try {
+        const w = await client.query('SELECT wallet_id FROM wallets WHERE owner_type = $1 AND owner_id = $2', ['CUSTOMER', userId]);
+        if (w.rowCount === 0) {
+          await client.query('INSERT INTO wallets (owner_type, owner_id, balance) VALUES ($1,$2,$3)', ['CUSTOMER', userId, 0]);
+        }
+      } catch (e) {
+        console.warn('Failed to create wallet for customer', userId, e);
+      }
     } else if (role === 'enterprise') {
       // require license file for enterprise registrations
       if (!licenseFile) {
@@ -89,6 +100,15 @@ router.post('/register', async (req, res) => {
       // create enterprise and business profile (pending)
       await client.query('INSERT INTO enterprises (enterprise_id, business_name, business_address, tax_code, is_approved) VALUES ($1,$2,$3,$4,$5)', [userId, businessName || fullName, businessAddress || address || null, taxCode || ('TAX' + Date.now()), false]);
       await client.query('INSERT INTO business_profiles (enterprise_id, business_name, address, license_file, tax_code, status) VALUES ($1,$2,$3,$4,$5,$6)', [userId, businessName || fullName, businessAddress || address || null, storedPath, taxCode || ('TAX' + Date.now()), 'PENDING']);
+      // create wallet for enterprise if not exists
+      try {
+        const w = await client.query('SELECT wallet_id FROM wallets WHERE owner_type = $1 AND owner_id = $2', ['ENTERPRISE', userId]);
+        if (w.rowCount === 0) {
+          await client.query('INSERT INTO wallets (owner_type, owner_id, balance) VALUES ($1,$2,$3)', ['ENTERPRISE', userId, 0]);
+        }
+      } catch (e) {
+        console.warn('Failed to create wallet for enterprise', userId, e);
+      }
     }
 
     await client.query('COMMIT');
@@ -168,4 +188,64 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// POST /api/auth/password-reset-request
+// Body: { email }
+router.post('/password-reset-request', async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ error: 'Missing email' });
+  try {
+    const userRes = await db.query('SELECT user_id, email FROM users WHERE email = $1', [email]);
+    if (userRes.rowCount === 0) {
+      // don't reveal whether email exists
+      return res.json({ ok: true, message: 'If the email exists, a reset link was sent.' });
+    }
+    const user = userRes.rows[0];
+    // create a secure token and save in verify_tokens
+    const token = crypto.randomBytes(24).toString('hex');
+    const now = new Date();
+    const expires = new Date(now.getTime() + VERIFY_TOKEN_TTL_MINUTES * 60 * 1000);
+    await db.query('INSERT INTO verify_tokens (user_id, token, type, created_at, expired_at) VALUES ($1,$2,$3,$4,$5)', [user.user_id, token, 'password_reset', now, expires]);
+
+    // Build reset link using API_BASE_URL if available
+    const base = process.env.API_BASE_URL || (req.protocol + '://' + req.get('host'));
+    const resetLink = base + '/features/auth/password-reset.html?token=' + encodeURIComponent(token);
+
+    // For now, we don't have an email provider configured; log the link and return it in response for dev
+    console.log('Password reset link for', email, resetLink);
+
+    return res.json({ ok: true, message: 'If the email exists, a reset link was sent.', resetLink });
+  } catch (err) {
+    console.error('password-reset-request error', err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /api/auth/password-reset
+// Body: { token, password }
+router.post('/password-reset', async (req, res) => {
+  const { token, password } = req.body;
+  if (!token || !password) return res.status(400).json({ error: 'Missing token or password' });
+  try {
+    const tRes = await db.query('SELECT token_id, user_id, expired_at FROM verify_tokens WHERE token = $1 AND type = $2', [token, 'password_reset']);
+    if (tRes.rowCount === 0) return res.status(400).json({ error: 'Invalid or expired token' });
+    const row = tRes.rows[0];
+    if (new Date(row.expired_at) < new Date()) {
+      return res.status(400).json({ error: 'Token expired' });
+    }
+
+    // update user's password
+    const newHash = await bcrypt.hash(password, 10);
+    await db.query('UPDATE users SET password_hash = $1 WHERE user_id = $2', [newHash, row.user_id]);
+
+    // delete the token
+    await db.query('DELETE FROM verify_tokens WHERE token_id = $1', [row.token_id]);
+
+    return res.json({ ok: true, message: 'Password has been reset' });
+  } catch (err) {
+    console.error('password-reset error', err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 module.exports = router;
+

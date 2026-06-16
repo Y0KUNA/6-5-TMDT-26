@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Đăng Nhập - Nông Sản Sạch</title>
+  <link rel="stylesheet" href="../../css/style.css">
+</head>
+<body>
+  <!-- Shared Header Placeholder -->
+  <div id="siteHeader"></div>
+
+  <!-- Login Form -->
+  <div class="container mt-32" style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+    <div class="card" style="width: 100%; max-width: 500px;">
+      <div class="card-header">
+        <h2 class="card-title">Đăng nhập</h2>
+        <p class="card-subtitle">Chào mừng bạn quay trở lại!</p>
+      </div>
+
+      <form id="loginForm">
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" class="form-input" placeholder="Nhập email của bạn" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Mật khẩu</label>
+          <input type="password" class="form-input" placeholder="Nhập mật khẩu" required>
+        </div>
+
+        <div id="errorMessage" style="color: #EF4444; font-size: 14px; margin-bottom: 16px; display: none;"></div>
+
+        <button type="submit" class="btn btn-success" style="width: 100%;">Đăng nhập</button>
+
+        <div class="text-center mt-16">
+          <span style="color: #666; font-size: 16px;">Chưa có tài khoản? </span>
+          <a href="../register/register.html" style="color: #22C55E; font-size: 16px; font-weight: 600; text-decoration: none;">Đăng ký ngay</a>
+          <div style="margin-top:8px;"><a href="../auth/password-reset-request.html" style="color:#2563EB; font-size:14px;">Quên mật khẩu?</a></div>
+        </div>
+
+        <div class="text-center mt-16" style="padding: 16px; background: #F0FDF4; border-radius: 4px; border: 1px solid #22C55E;">
+          <p style="color: #666; font-size: 14px; margin-bottom: 8px;">Tài khoản test:</p>
+          <p style="color: #333; font-size: 14px;"><strong>Admin:</strong> admin@nongsanecommerce.vn / Admin@123456</p>
+          <p style="color: #333; font-size: 14px;"><strong>User:</strong> abc@123.com / 123123</p>
+          <p style="color: #333; font-size: 14px;"><strong>Business:</strong> nongtrai@organic.vn / business123</p>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="../shared/data.js"></script>
+  <script src="../shared/data-business.js"></script>
+  <script src="../shared/header.js"></script>
+  <script src="./login.js"></script>
+</body>
+</html>

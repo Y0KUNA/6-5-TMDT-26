@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Đăng Ký Doanh Nghiệp - Nông Sản Sạch</title>
+  <link rel="stylesheet" href="../../css/style.css">
+</head>
+<body>
+  <!-- Shared Header Placeholder -->
+  <div id="siteHeader"></div>
+
+  <!-- Register Form -->
+  <div class="container mt-32" style="display: flex; justify-content: center; padding-bottom: 48px;">
+    <div class="card" style="width: 100%; max-width: 500px;">
+      <div class="card-header">
+        <h2 class="card-title">Đăng ký</h2>
+        <p class="card-subtitle">Tạo tài khoản mới để bắt đầu mua sắm</p>
+      </div>
+
+      <form id="registerBusinessForm">
+        <!-- form fields (copied from original) -->
+        <button type="submit" class="btn btn-success" style="width: 100%;">Đăng ký</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="../shared/data.js"></script>
+  <script src="../shared/header.js"></script>
+  <script>
+    // Inline logic moved here with redirects to feature pages
+    document.getElementById('registerBusinessForm')?.addEventListener('submit', function(e) {
+      e.preventDefault();
+      alert('Đăng ký doanh nghiệp (demo) – form đã được xử lý.');
+      window.location.href = '../login/login.html';
+    });
+  </script>
+</body>
+</html>
